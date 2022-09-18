@@ -1,13 +1,14 @@
 from crypt import methods
 from urllib import request
 from flask import Flask, redirect, url_for, render_template, send_from_directory, request
+from datetime import date
 import sqlite3
 
-app = Flask(__name__, static_folder="icons")
+app = Flask(__name__, static_folder="static")
 
 @app.route('/')
 def home():
-    return "it works!"
+    return render_template("home.html")
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
@@ -21,6 +22,12 @@ def login():
     else:
         return render_template("login.html")
 
+@app.route('/class')
+def detailClass():
+    id = request.args.get('id')
+    print(id)
+    schueler = [["123456", "DomDom", "Georg"], ["234567", "sdfgh", "sedfgh"], ["123", "Göröp", "WOW"]]
+    return render_template("detailClass.html", className="10a", schueler=schueler)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

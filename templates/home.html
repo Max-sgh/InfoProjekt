@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title%} Startseite {% endblock %}
+{% block header%}
+<style>
+    tbody tr{
+        cursor: pointer;
+    }
+    th {
+        padding: 10px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<h1 class="fs-1 fw-normal">Station Wurf 1</h1>
+<!--<div class="panel panel-default">
+    <div class="panel-body">
+        <div class="">
+            <div class="btn-group">
+                <h5>
+                <button type="button" class="btn btn-success btn-filter" data-target="abgeschlossen">Abgeschlossen</button>
+				<button type="button" class="btn btn-danger btn-filter" data-target="fehler">Fehler</button>
+                <button type="button" class="btn btn-secondary btn-filter" data-target="offen">Offen</button>
+				<button type="button" class="btn btn-default btn-filter" data-target="alle">Alle</button>
+                </h5>
+            </div>
+        </div>
+        <div class="table-container">
+            
+        </div>
+    </div>
+</div>
+-->
+
+<table class="table table-striped table-codensed">
+    <thead>
+        <tr class="bg-dark" style="color: white">
+            <th>Klasse</th>
+            <th>Anzahl Schüler</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr onclick="myFunction(5)">
+            <td>10a Jungen</td>
+            <td>10</td>
+            <td><h6><span class="badge text-bg-success">Abgeschlossen</span></h6></td>
+        </tr>
+        <tr onclick="myFunction(0)">
+            <td>10a Mädchen</td>
+            <td>10</td>
+            <td><h6><span class="badge text-bg-success">Abgeschlossen</span></h6></td>
+        </tr>
+        <tr onclick="myFunction(28)">
+            <td>10b Mädchen</td>
+            <td>16</td>
+            <td><h6><span class="badge text-bg-secondary">Offen</span></h6></td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    function myFunction(id) {
+      window.location.replace("/class?id=" + id);
+    }
+</script>
+
+{% endblock %}

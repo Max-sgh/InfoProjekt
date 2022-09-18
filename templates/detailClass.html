@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %} Klasse {{className}} {% endblock%}
+
+{% block header%}
+<style>
+    th {
+        padding: 10px;
+    }
+    .btn:focus {
+        outline: none !important;
+        box-shadow: none; 
+    }
+    
+</style>
+<script src="static/schueler.js"></script>
+<script>
+    _schueler = [];
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+<h1 class="fs-1 fw-normal p-2 flex-grow-1">Klasse {{className}}</h1>
+<button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+
+<table class="table table-striped table-codensed">
+    <thead>
+        <tr class="bg-dark" style="color: white">
+            <th>Name</th>
+            <th>Vorname</th>
+            <th>Wert</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in schueler%}
+        <tr>
+            <td>{{s[1]}}</td>
+            <td>{{s[2]}}</td>
+            <td><input type="text" class="form-control w-25" oninput="checkInput(this)" id="{{s[0]}}"/></td>
+        </tr>
+        <script>
+            var vorname = "{{s[1]}}";
+            var nachname = "{{s[2]}}";
+            var schuelerNr = "{{s[0]}}";
+            schueler = new Schueler(vorname, nachname, schuelerNr);
+            _schueler.push(schueler);
+        </script>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="d-flex flex-row-reverse">
+    <button role="button" text="Abschließen" class="btn btn-lg btn-primary flex-row-reverse" style="width: 15%;" onclick="btnSaveClicked()">Speichern</button>
+</div>
+
+
+<script>
+    function checkInput(input) {
+      var str = input.value;
+      if (str.match(/[a-zA-Z]/g) == null) {
+        return;
+      }
+      var length = str.match(/[a-zA-Z]/g).length;
+      if (length != 0) {
+        alert("Fehler");
+      }
+    }
+
+    function btnCloseClick() {
+        window.location.replace("/");
+    }
+
+    function btnSaveClicked() {
+        document.getElementById("LoadingAnimation").style = "visibility: visible;"
+        for (i = 0; i < _schueler.length; i++) {
+            var wert = document.getElementById(_schueler[i].schuelerNr).value;
+            _schueler[i].sendeWert(wert);
+        }
+        window.location.replace("/");
+    }
+</script>
+{% endblock %}
