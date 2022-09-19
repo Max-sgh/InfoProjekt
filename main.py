@@ -29,5 +29,9 @@ def detailClass():
     schueler = [["123456", "DomDom", "Georg"], ["234567", "sdfgh", "sedfgh"], ["123", "Göröp", "WOW"]]
     return render_template("detailClass.html", className="10a", schueler=schueler)
 
+@app.route('/evaluation')
+def evaluation():
+    return render_template("evaluation.html")
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", debug=True)

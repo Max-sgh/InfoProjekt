@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %} Auswertung {% endblock %}
+
+{% block header%}
+<style>
+    th {
+        padding: 10px;
+    }
+
+    .btn:focus {
+        outline: none !important;
+        box-shadow: none;
+    }
+
+    .filterable {
+        cursor: pointer;
+    }
+</style>
+<script src="static/schueler.js"></script>
+<script>
+    _schueler = [];
+    _aktuelleAuswahl = [];
+    s1 = new Schueler("Fico", "Nilary", 1);
+    s1.geschlecht = "m";
+    s1.punkteGesamt = -10;
+    s1.klasse = "5a";
+    _schueler.push(s1);
+    s2 = new Schueler("Fico", "Nilary", 2);
+    s2.geschlecht = "w";
+    s2.punkteGesamt = 20;
+    s2.klasse = "5c";
+    _schueler.push(s2);
+    s3 = new Schueler("Fico", "Nilary", 3);
+    s3.geschlecht = "w";
+    s3.punkteGesamt = -10;
+    s3.klasse = "5a";
+    _schueler.push(s3);
+    s4 = new Schueler("Fico", "Nilary", 4);
+    s4.geschlecht = "m";
+    s4.punkteGesamt = 50;
+    s4.klasse = "5b";
+    _schueler.push(s4);
+    _aktuelleAuswahl = _schueler;
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1">Auswertung</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+<table class="table table-striped table-condensed">
+    <thead>
+        <tr class="bg-dark" style="color: white;">
+            <th style="width: 5%">SchulerNr</th>
+            <th style="width:20%">Name</th>
+            <th style="width:20%">Vorname</th>
+            <th style="width:10%">Klasse</th>
+            <th style="width:20%">Geschlecht</th>
+            <th style="width:5%" onclick="sortiere('punkte')" class="filterable">Punkte</th>
+        </tr>
+        <tr>
+            <th>
+                <!--<select class="form-select" disabled>
+                        <option>Klassenstufe auswählen</option>
+                        <option>5</option>
+                        <option>6</option>
+                        <option>7</option>
+                        <option>8</option>
+                    </select>-->
+            </th>
+            <th>
+                <input type="text" class="form-control" placeholder="Nachnamen suchen" disabled>
+            </th>
+            <th>
+                <input type="text" class="form-control" placeholder="Vornamen suchen" disabled>
+            </th>
+            <th>
+                <select class="form-select" onchange="filter()" id="selectKlasse">
+                    <option>Klasse auswählen</option>
+                    <option>5a</option>
+                    <option>5b</option>
+                    <option>5c</option>
+                    <option>5d</option>
+                    <option>5e</option>
+                </select>
+            </th>
+            <th>
+                <select class="form-select" onchange="filter()" id="selectGeschlecht">
+                    <option>Geschlecht auswählen</option>
+                    <option>m</option>
+                    <option>w</option>
+                </select>
+            </th>
+        </tr>
+    </thead>
+    <tbody id="tbody">
+        <tr>
+            <td>1</td>
+            <td>Nilary</td>
+            <td>Fico</td>
+            <td>5a</td>
+            <td>m</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Nilary</td>
+            <td>Fico</td>
+            <td>5c</td>
+            <td>w</td>
+            <td>20</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Nilary</td>
+            <td>Fico</td>
+            <td>5a</td>
+            <td>w</td>
+            <td>-10</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Nilary</td>
+            <td>Fico</td>
+            <td>5b</td>
+            <td>m</td>
+            <td>50</td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    function btnCloseClick() {
+        window.location.replace("/");
+    }
+
+    function filter() {
+        document.getElementById("LoadingAnimation").style = "visibility:visible;";
+        var selectGeschlecht = document.getElementById("selectGeschlecht");
+        var geschlecht = selectGeschlecht.options[selectGeschlecht.selectedIndex].text;
+        console.log(geschlecht);
+        auswahl = [];
+        if (geschlecht == "Geschlecht auswählen") {
+            auswahl = _schueler;
+        } else if (geschlecht == "m") {
+            for (i = 0; i < _schueler.length; i++) {
+                if (_schueler[i].geschlecht == "m") {
+                    auswahl.push(_schueler[i]);
+                }
+            }
+        } else {
+            for (i = 0; i < _schueler.length; i++) {
+                if (_schueler[i].geschlecht == "w") {
+                    auswahl.push(_schueler[i]);
+                }
+            }
+        }
+
+        var selectKlasse = document.getElementById("selectKlasse");
+        var klasse = selectKlasse.options[selectKlasse.selectedIndex].text;
+        auswahlNeu = [];
+        if (klasse == "Klasse auswählen") {
+            auswahlNeu = auswahl;
+        } else {
+            for (i = 0; i < auswahl.length; i++) {
+                if (klasse == auswahl[i].klasse) {
+                    auswahlNeu.push(auswahl[i]);
+                }
+            }
+        }
+        auswahl = auswahlNeu;
+
+        var html = "";
+        for (i = 0; i < auswahl.length; i++) {
+            html += "<tr><td>" + auswahl[i].schuelerNr + "</td><td>" + auswahl[i].nachname + "</td><td>" + auswahl[i].vorname + "</td><td>" + auswahl[i].klasse + "</td><td>" + auswahl[i].geschlecht + "</td><td>" + auswahl[i].punkteGesamt + "</td></tr>";
+        }
+        _aktuelleAuswahl = auswahl;
+        document.getElementById("tbody").innerHTML = html;
+        document.getElementById("LoadingAnimation").style = "visibility:hidden;";
+    }
+
+    function sortiere(nach) {
+        if (nach == 'punkte') {
+
+        }
+    }
+</script>
+{% endblock %}

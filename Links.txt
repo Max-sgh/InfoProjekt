@@ -1,0 +1,6 @@
+UI:
+https://getbootstrap.com/docs/5.2/forms/select/
+https://bootsnipp.com/snippets/VDrZ
+
+SQL:
+https://www.python-kurs.eu/sql_python.php
