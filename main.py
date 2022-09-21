@@ -8,7 +8,8 @@ app = Flask(__name__, static_folder="static")
 
 @app.route('/')
 def home():
-    return render_template("home.html")
+    station = "Wurf 1"
+    return render_template("home.html", station=station)
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
@@ -16,7 +17,7 @@ def login():
         user = request.form["username"]
         password = request.form["password"]
         #
-        # Anmeldung durchführen
+        # Anmeldung durchführen; Session Variablen setzen
         #
         return redirect(url_for("home"))
     else:
@@ -32,6 +33,10 @@ def detailClass():
 @app.route('/evaluation')
 def evaluation():
     return render_template("evaluation.html")
+
+@app.route('/settings')
+def settings():
+    return render_template("settings.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

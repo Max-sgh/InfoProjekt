@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %} Auswertung {% endblock %}
+
+{% block header%}
+
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1">Einstellungen</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+<div>
+    <button type="button" class="btn btn-dark btn-lg w-50" style="margin-bottom: 2px;">Allgemeines  ></button>
+    <button type="button" class="btn btn-dark btn-lg w-50" style="margin-bottom: 2px;">Klassen  ></button>
+    <button type="button" class="btn btn-dark btn-lg w-50">Stationen  ></button>
+</div>
+{% endblock %}
