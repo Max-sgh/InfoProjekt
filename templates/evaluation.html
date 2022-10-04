@@ -19,27 +19,19 @@
 <script src="static/schueler.js"></script>
 <script>
     _schueler = [];
+    _klassen = [];
+    {% for s in schueler %}
+    schueler = new Schueler("{{s[0]}}", "{{s[1]}}", "{{s[2]}}");
+    schueler.geschlecht = "{{s[3]}}";
+    schueler.punkteGesamt = "{{s[4]}}";
+    schueler.klasse = "{{s[5]}}";
+    if (!_klassen.includes(schueler.klasse)) {
+        _klassen.push(schueler.klasse);
+    }
+    _schueler.push(schueler);
+    {% endfor %}
+
     _aktuelleAuswahl = [];
-    s1 = new Schueler("Aico", "Ailary", 1);
-    s1.geschlecht = "m";
-    s1.punkteGesamt = 100;
-    s1.klasse = "5a";
-    _schueler.push(s1);
-    s2 = new Schueler("Bico", "Bilary", 2);
-    s2.geschlecht = "w";
-    s2.punkteGesamt = 20;
-    s2.klasse = "5c";
-    _schueler.push(s2);
-    s3 = new Schueler("Cico", "Bilary", 3);
-    s3.geschlecht = "w";
-    s3.punkteGesamt = -10;
-    s3.klasse = "5a";
-    _schueler.push(s3);
-    s4 = new Schueler("Fico", "Nilary", 4);
-    s4.geschlecht = "m";
-    s4.punkteGesamt = 50;
-    s4.klasse = "5b";
-    _schueler.push(s4);
     _aktuelleAuswahl = _schueler;
 </script>
 
@@ -53,11 +45,11 @@
 <table class="table table-striped table-condensed">
     <thead>
         <tr class="bg-dark" style="color: white;">
-            <th style="width: 5%" onclick="sortiere('schuelerNr')" class="filterable">SchulerNr</th>
-            <th style="width:20%">Nachname</th>
-            <th style="width:20%">Vorname</th>
-            <th style="width:10%">Klasse</th>
-            <th style="width:15%">Geschlecht</th>
+            <th style="width: 10%" onclick="sortiere('schuelerNr')" class="filterable">SchulerNr</th>
+            <th style="width:20%" onclick="sortiere('name')" class="filterable">Nachname</th>
+            <th style="width:20%" onclick="sortiere('name')" class="filterable">Vorname</th>
+            <th style="width:10%" onclick="sortiere('klasse')" class="filterable">Klasse</th>
+            <th style="width:10%">Geschlecht</th>
             <th style="width:5%" onclick="sortiere('punkte')" class="filterable">Punkte</th>
         </tr>
         <tr>
@@ -78,12 +70,7 @@
             </th>-->
             <th>
                 <select class="form-select" onchange="filter()" id="selectKlasse">
-                    <option>Klasse auswählen</option>
-                    <option>5a</option>
-                    <option>5b</option>
-                    <option>5c</option>
-                    <option>5d</option>
-                    <option>5e</option>
+
                 </select>
             </th>
             <th>
@@ -154,7 +141,7 @@
             const arr = Array.from(_aktuelleAuswahl);
             for (i = 1; i < arr.length; i++) {
                 for (j = 0; j < (arr.length - i); j++) {
-                    if (arr[j].punkteGesamt > arr[j + 1].punkteGesamt) {
+                    if (parseInt(arr[j].punkteGesamt) < parseInt(arr[j + 1].punkteGesamt)) {
                         [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
                     }
                 }
@@ -172,6 +159,37 @@
             }
             _aktuelleAuswahl = arr;
         }
+        if (nach == "klasse") {
+            kopieSchueler = Array.from(_aktuelleAuswahl);
+            for (i = 1; i < kopieSchueler.length; i++) {
+                for (j = 0; j < (kopieSchueler.length - i); j++) {
+                    if (kopieSchueler[j].klasse > kopieSchueler[j + 1].klasse) {
+                        [kopieSchueler[j], kopieSchueler[j + 1]] = [kopieSchueler[j + 1], kopieSchueler[j]];
+                    }
+                }
+            }
+            for (i = 1; i < kopieSchueler.length; i++) {
+                for (j = 0; j < (kopieSchueler.length - i); j++) {
+                    if (kopieSchueler[j].klasse == kopieSchueler[j + 1].klasse) {
+                        if (kopieSchueler[j].nachname > kopieSchueler[j + 1].nachname) {
+                            [kopieSchueler[j], kopieSchueler[j + 1]] = [kopieSchueler[j + 1], kopieSchueler[j]];
+                        }
+                    }
+                }
+            }
+            _aktuelleAuswahl = kopieSchueler;
+        }
+        if (nach == "name") {
+            kopieSchueler = Array.from(_aktuelleAuswahl);
+            for (i = 1; i < kopieSchueler.length; i++) {
+                for (j = 0; j < (kopieSchueler.length - i); j++) {
+                    if (kopieSchueler[j].nachname > kopieSchueler[j + 1].nachname) {
+                        [kopieSchueler[j], kopieSchueler[j + 1]] = [kopieSchueler[j + 1], kopieSchueler[j]];
+                    }
+                }
+            }
+            _aktuelleAuswahl = kopieSchueler;
+        }
         tabelleErstellen();
         document.getElementById("LoadingAnimation").style = "visibility:hidden;";
     }
@@ -184,8 +202,19 @@
             if (_aktuelleAuswahl[i].nachname.match(token) == null && _aktuelleAuswahl[i].vorname.match(token) == null) {
                 continue;
             }
-            if (_aktuelleAuswahl[i].nachname.match(token).length != 0 || _aktuelleAuswahl[i].vorname.match(token).length != 0) {
+            //
+            // Suche nach Nach- und Vorname getrennt
+            //
+            /*if (_aktuelleAuswahl[i].nachname.match(token).length != 0 || _aktuelleAuswahl[i].vorname.match(token).length != 0) {
                 auswahl.push(_aktuelleAuswahl[i]);
+            }*/
+            if (_aktuelleAuswahl[i].nachname.match(token) != null && _aktuelleAuswahl[i].nachname.match(token).length != 0) {
+                auswahl.push(_aktuelleAuswahl[i]);
+                continue;
+            }
+            if (_aktuelleAuswahl[i].vorname.match(token) != null && _aktuelleAuswahl[i].vorname.match(token).length != 0) {
+                auswahl.push(_aktuelleAuswahl[i]);
+                continue;
             }
         }
         _aktuelleAuswahl = auswahl;
@@ -203,6 +232,21 @@
         document.getElementById("tbody").innerHTML = html;
     }
 
+    // Select für Klassen erstellen
+    for (i = 1; i < _klassen.length; i++) {
+        for (j = 0; j < (_klassen.length - i); j++) {
+            if (_klassen[j] > _klassen[j + 1]) {
+                [_klassen[j], _klassen[j + 1]] = [_klassen[j + 1], _klassen[j]];
+            }
+        }
+    }
+    html = "<option>Klasse auswählen</option>";
+    for (i = 0; i < _klassen.length; i++) {
+        html += "<option>" + _klassen[i] + "</option>";
+    }
+    document.getElementById("selectKlasse").innerHTML = html;
+
+    // Tabelle mit aktuellen Daten füllen
     tabelleErstellen();
 </script>
 {% endblock %}

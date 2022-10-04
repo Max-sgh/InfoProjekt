@@ -7,12 +7,63 @@
 
 {% block content %}
 <div class="d-flex">
-    <h1 class="fs-1 fw-normal p-2 flex-grow-1">Einstellungen</h1>
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Einstellungen</h1>
     <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
 </div>
-<div>
-    <button type="button" class="btn btn-dark btn-lg w-50" style="margin-bottom: 2px;">Allgemeines  ></button>
-    <button type="button" class="btn btn-dark btn-lg w-50" style="margin-bottom: 2px;">Klassen  ></button>
-    <button type="button" class="btn btn-dark btn-lg w-50">Stationen  ></button>
+<div id="content" style="margin-left: 20px;">
+    
 </div>
+<template id="menu">
+    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)" id="general">Allgemeines  ></button>
+    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)" id="class">Klassen  ></button>
+    <button type="button" class="btn btn-dark btn-lg w-100" onclick="redirect(this)" id="stations">Stationen  ></button>
+</template>
+<template id="general">
+    <h3 style="text-decoration: underline;">LDAP Einstellungen</h3>
+    <form method="post" class="w-50">
+        <div class="mb-3">
+            <label for="serverAddressInp" class="form-label">LDAP Server</label>
+            <input type="text" class="form-control" id="serverAddressInp">
+        </div>
+        <div class="mb-3">
+            <label for="serverUsernameInp" class="form-label">LDAP Nutzer</label>
+            <input type="text" class="form-control" id="serverUsernameInp">
+        </div>
+        <button type="button" class="btn btn-primary btn-lg float-end">Speichern</button>
+    </form>
+</template>
+<template id="class">
+    <p>Klassen</p>
+</template>
+<script>
+    var _section = "{{ section }}";
+    if (_section == "None") {
+        document.getElementById("content").innerHTML = document.getElementById("menu").innerHTML;
+        document.getElementById("heading").innerHTML = "Einstellungen";
+    } else if (_section == "general") {
+        document.getElementById("content").innerHTML = document.getElementById("general").innerHTML;
+        document.getElementById("heading").innerHTML = "Allgemeine Einstellungen";
+    } else if (_section == "class") {
+        document.getElementById("content").innerHTML = document.getElementById("class").innerHTML;
+        document.getElementById("heading").innerHTML = "Klassen verwalten";
+    }
+    function redirect(to) {
+        if (to.id == "general") {
+            window.location.replace("/settings?section=general");
+        } else if (to.id == "class") {
+            window.location.replace("/settings?section=class");
+        } else if (to.id == "stations") {
+            window.location.replace("/settings?section=stations");
+        } else {
+            window.location.replace("/settings");
+        }
+    }
+    function btnCloseClick() {
+        if (_section == "None") {
+            window.location.replace("/");
+        } else {
+            window.location.replace("/settings");
+        }
+    }
+</script>
 {% endblock %}
