@@ -67,7 +67,7 @@
     }
 
     function btnCloseClick() {
-        window.location.replace("/");
+        window.location.href = "/";
     }
 
     function btnSaveClicked() {
@@ -76,7 +76,7 @@
             var wert = document.getElementById(_schueler[i].schuelerNr).value;
             _schueler[i].sendeWert(wert);
         }
-        window.location.replace("/");
+        window.location.href = "/";
     }
 </script>
 {% endblock %}

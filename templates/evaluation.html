@@ -87,8 +87,9 @@
 </table>
 
 <script>
+    let _sortierePunktAbsteigend = false;
     function btnCloseClick() {
-        window.location.replace("/");
+        window.location.href = "/";
     }
 
     function filter() {
@@ -138,10 +139,14 @@
     function sortiere(nach) {
         document.getElementById("LoadingAnimation").style = "visibility:visible;";
         if (nach == 'punkte') {
+            _sortierePunktAbsteigend = !_sortierePunktAbsteigend;
             const arr = Array.from(_aktuelleAuswahl);
             for (i = 1; i < arr.length; i++) {
                 for (j = 0; j < (arr.length - i); j++) {
-                    if (parseInt(arr[j].punkteGesamt) < parseInt(arr[j + 1].punkteGesamt)) {
+                    if (_sortierePunktAbsteigend && parseInt(arr[j].punkteGesamt) < parseInt(arr[j + 1].punkteGesamt)) {
+                        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+                    }
+                    if (!_sortierePunktAbsteigend && parseInt(arr[j].punkteGesamt) > parseInt(arr[j + 1].punkteGesamt)) {
                         [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
                     }
                 }

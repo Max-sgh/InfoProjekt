@@ -1,8 +1,17 @@
 {% extends "base.html" %}
-{% block title %} Auswertung {% endblock %}
+{% block title %} Einstellungen {% endblock %}
 
 {% block header%}
-
+<script>
+    _klassenstufen = ["5", "6", "7", "8", "9", "10"];
+    _aktuelleKlassenstufe = 0;
+    _klassen = [[["5a", 20], ["5b", 30], ["5c", 10]], [["6a", 10], ["6b", 20]], [["7a", 10], ["7b", 50], ["7c", 2]], [], [], []];
+</script>
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -19,22 +28,54 @@
     <button type="button" class="btn btn-dark btn-lg w-100" onclick="redirect(this)" id="stations">Stationen  ></button>
 </template>
 <template id="general">
-    <h3 style="text-decoration: underline;">LDAP Einstellungen</h3>
-    <form method="post" class="w-50">
-        <div class="mb-3">
-            <label for="serverAddressInp" class="form-label">LDAP Server</label>
-            <input type="text" class="form-control" id="serverAddressInp">
-        </div>
-        <div class="mb-3">
-            <label for="serverUsernameInp" class="form-label">LDAP Nutzer</label>
-            <input type="text" class="form-control" id="serverUsernameInp">
-        </div>
-        <button type="button" class="btn btn-primary btn-lg float-end">Speichern</button>
-    </form>
+    <div class="w-50">
+        <h3 style="text-decoration: underline;">LDAP Einstellungen</h3>
+        <form method="post">
+            <div class="mb-3">
+                <label for="serverAddressInp" class="form-label">LDAP Server</label>
+                <input type="text" class="form-control" id="serverAddressInp">
+            </div>
+            <div class="mb-3">
+                <label for="serverUsernameInp" class="form-label">LDAP Nutzer</label>
+                <input type="text" class="form-control" id="serverUsernameInp">
+            </div>
+            <button type="button" class="btn btn-primary btn-lg float-end">Speichern</button>
+        </form>
+        <br>
+        <br>
+        <h3 style="text-decoration: underline;">Alle Daten löschen</h3>
+        <button type="button", class="btn btn-danger btn-lg float-end">Alles löschen</button>
+    </div>
 </template>
 <template id="class">
-    <p>Klassen</p>
+        <div class="row">
+            <div class="col-md-6 table-responsive">
+                <table class="table table-striped table-condensed">
+                    <thead class="bg-dark" style="color: white;">
+                        <tr>
+                            <td>Klassenstufen</td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody id="tblKlassenstufen">
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6 table-responsive">
+                <table class="table table-striped table-condensed col-md-6 table-responsive">
+                    <thead class="bg-dark" style="color: white;">
+                        <tr>
+                            <td colspan="3">Klassen</td>
+                        </tr>
+                    </thead>
+                    <tbody id="tblKlassen">
+                    </tbody>
+                </table>
+            </div>
+        </div>
 </template>
+
+
 <script>
     var _section = "{{ section }}";
     if (_section == "None") {
@@ -49,21 +90,60 @@
     }
     function redirect(to) {
         if (to.id == "general") {
-            window.location.replace("/settings?section=general");
+            window.location.href = "/settings?section=general";
         } else if (to.id == "class") {
-            window.location.replace("/settings?section=class");
+            window.location.href = "/settings?section=class";
         } else if (to.id == "stations") {
-            window.location.replace("/settings?section=stations");
+            window.location.href = "/settings?section=stations";
         } else {
-            window.location.replace("/settings");
+            window.location.href = "/settings";
         }
     }
     function btnCloseClick() {
         if (_section == "None") {
-            window.location.replace("/");
+            window.location.href = "/";
         } else {
-            window.location.replace("/settings");
+            window.location.href = "/settings";
         }
     }
+    function clickKlassenstufe(index) {
+        _aktuelleKlassenstufe = index;
+        klassentabelleErstellen();
+    }
+    
+    function klassenstufentabelleErstellen() {
+        tblKlassenstufen = document.getElementById("tblKlassenstufen");
+        html = "";
+        for (i = 0; i < _klassenstufen.length; i++) {
+            html += "<tr class='clickable' onclick='clickKlassenstufe(" + i + ")'><td>" + _klassenstufen[i] + "</td><td style='text-align: right;'><i class='fa-solid fa-gear' onclick='aenderKlassenstufe(" + i + ")'></i> <i class='fa-solid fa-trash-can' onclick='löscheKlassenstufe(" + i + ")'></i></td></tr>"
+        }
+        tblKlassenstufen.innerHTML = html;
+    }
+
+    function aenderKlassenstufe(index) {
+        console.log("Ändere Klassenstufe #" + index);
+    }
+    
+    function löscheKlassenstufe(index) {
+        console.log("Lösche Klassenstufe #" + index);
+    }
+    
+    function aenderKlasse(index) {
+        console.log("Ändere Klasse #" + index);
+        //window.location.replace("/settings/class?class=" + _klassen[_aktuelleKlassenstufe][index][0]);
+        window.location.href = "/settings/class?class=" + _klassen[_aktuelleKlassenstufe][index][0];
+    }
+
+    function klassentabelleErstellen() {
+        tblKlassen = document.getElementById("tblKlassen");
+        html = "";
+        klassen = _klassen[_aktuelleKlassenstufe];
+        for (i = 0; i < klassen.length; i++) {
+            html += '<tr class="clickable" onclick="aenderKlasse(' + i + ')"><td>' + klassen[i][0] + '</td><td>' + klassen[i][1] + '</td><td style="text-align: right;"></td></tr>'
+        }
+        tblKlassen.innerHTML = html;
+    }
+    klassenstufentabelleErstellen();
+    klassentabelleErstellen();
 </script>
 {% endblock %}

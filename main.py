@@ -62,5 +62,12 @@ def settings():
     else:
         return render_template("settings.html", section=request.args.get('section'))
 
+@app.route('/settings/class')
+def settings_class():
+    if request.args.get('class') == None:
+        return redirect(url_for("home"))
+    klasse = request.args.get('class')
+    return render_template("settingsClass.html", klasse=klasse)
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

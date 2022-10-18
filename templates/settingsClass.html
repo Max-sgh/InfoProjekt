@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %} Klasse {{klasse}} {% endblock %}
+
+{% block header%}
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+
+    .fa-solid {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+</style>
+<script>
+    _schueler = [[1, "Ailary", "Aico", "u"], [2, "Bilary", "Bico", "w"], [3, "Bilary", "Cico", "m"]];
+    _schuelerVerfügbar = Array.from(_schueler);
+    _aktuelleAuswahl = [];
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Klasse {{klasse}}</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+<div id="content" style="margin-left: 20px;">
+    <table class="table table-striped table-condensed">
+        <thead class="bg-dark" , style="color: white;">
+            <tr>
+                <td>SchülerNr</td>
+                <td>Nachname</td>
+                <td>Vorname</td>
+                <td>Geschlecht</td>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr class="clickable" onclick="clickBenutzer()">
+                <td>1</td>
+                <td>Ailary</td>
+                <td>Aico</td>
+                <td>u</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="d-flex flex-row-reverse">
+        <button type="button" onclick="erstelleModal()" class="btn btn-lg btn-dark flex-row-reverse" style="width: 15%;"
+            data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
+    </div>
+
+    <div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Schüler hinzufügen</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <b>Verfügbare Schüler:</b>
+                            <table class="table table-striped table-condensed">
+                                <thead class="bg-dark" style="color:white;">
+                                    <tr>
+                                        <td>Nachname</td>
+                                        <td>Vorname</td>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalTableVerfuegbar">
+                                </tbody>
+                            </table>
+                            <input type="text" placeholder="Suche" class="form-control" oninput="search(this)">
+                        </div>
+                        <div class="col-md-6">
+                            <b>Auswahl:</b>
+                            <table class="table table-striped table-condensed">
+                                <thead class="bg-dark" style="color:white;">
+                                    <tr>
+                                        <td>Nachname</td>
+                                        <td>Vorname</td>
+                                    </tr>
+                                </thead>
+                                <tbody id="modalTableAuswahl">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                    <button type="button" class="btn btn-primary" onclick="save()">Speichern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    function save() {
+        $('#staticBackdrop').modal('hide');
+        //document.getElementById("LoadingAnimation").style = "visibility: visible;";
+    }
+
+    function erstelleModal() {
+        // Daten vom Server holen
+        _schuelerVerfügbar = Array.from(_schueler);
+        _aktuelleAuswahl = [];
+        erstelleModalTabellen();
+    }
+
+    function selectRow(schuelerNr) {
+        console.log(schuelerNr);
+        for (i = 0; i < _schuelerVerfügbar.length; i++) {
+            if (schuelerNr == _schuelerVerfügbar[i][0]) {
+                schueler = _schuelerVerfügbar[i];
+                _schuelerVerfügbar.splice(i,1);
+                _aktuelleAuswahl.push(schueler);
+                break;
+            }
+        }
+        erstelleModalTabellen();
+    }
+
+    function deselectRow(schuelerNr) {
+        console.log(schuelerNr);
+        for (i = 0; i < _aktuelleAuswahl.length; i++) {
+            if (schuelerNr == _aktuelleAuswahl[i][0]) {
+                schueler = _aktuelleAuswahl[i];
+                _aktuelleAuswahl.splice(i,1);
+                _schuelerVerfügbar.push(schueler);
+                break;
+            }
+        }
+        erstelleModalTabellen();
+    }
+
+    function erstelleModalTabellen() {
+        tabelleVerfuegbar = document.getElementById("modalTableVerfuegbar");
+        tabelleAuswahl = document.getElementById("modalTableAuswahl");
+        html = "";
+        for (i = 0; i < _schuelerVerfügbar.length; i++) {
+            schueler = _schuelerVerfügbar[i];
+            html += '<tr class="clickable" onclick="selectRow(' + schueler[0] + ')"><td>' + schueler[1] + '</td><td>' + schueler[2] + '</td></tr>';
+        }
+        tabelleVerfuegbar.innerHTML = html;
+        html = "";
+        for (i = 0; i < _aktuelleAuswahl.length; i++) {
+            schueler = _aktuelleAuswahl[i];
+            html += '<tr class="clickable" onclick="deselectRow(' + schueler[0] + ')"><td>' + schueler[1] + '</td><td>' + schueler[2] + '</td></tr>';
+        }
+        tabelleAuswahl.innerHTML = html;
+    }
+
+    function clickBenutzer(schuelerNr) {
+        console.log("Benutzer #");
+    }
+
+    function erstelleTabelle() {
+        tbody = document.getElementById("tbody");
+        html = "";
+        for (i = 0; i < _schueler.length; i++) {
+            schueler = _schueler[i];
+            html += '<tr class="clickable" onclick="clickBenutzer(' + schueler[0] + ')"><td>' + schueler[0] + '</td><td>' + schueler[1] + '</td><td>' + schueler[2] + '</td><td>' + schueler[3] + '</td></tr>'
+        }
+
+        tbody.innerHTML = html;
+    }
+
+    function btnCloseClick() {
+        window.location.href = "/settings?section=class";
+    }
+    erstelleTabelle()
+</script>
+{% endblock %}
