@@ -6,6 +6,9 @@ import sqlite3
 
 app = Flask(__name__, static_folder="static")
 
+#
+# https://www.bundesjugendspiele.de/handbuch/wettkampf-leichtathletik/auswertung-formeln-und-beispiele-zur-punkteberechnung/
+#
 @app.route('/')
 def home():
     station = "Wurf 1"
@@ -55,6 +58,7 @@ def evaluation():
 
     return render_template("evaluation.html", schueler=schueler)
 
+
 @app.route('/settings')
 def settings():
     if request.args.get('section') == None:
@@ -68,6 +72,113 @@ def settings_class():
         return redirect(url_for("home"))
     klasse = request.args.get('class')
     return render_template("settingsClass.html", klasse=klasse)
+
+@app.route('/settings/gradelevel')
+def settings_gradelevel():
+    if request.args.get('id') == None:
+        return redirect(url_for("home"))
+    klassenstufe = request.args.get("id")
+    return render_template("settingsGradeLevel.html", klassenstufe = klassenstufe)
+
+#
+# API Requests
+#
+@app.route('/settings/class/getstudents')
+def getUser():
+    #
+    # Alle Schüler der Klasse als JSON (?) zurückgeben
+    #
+    if request.args.get('klasse') == None:
+        return "error"
+    else: 
+        klasse = request.args.get('klasse')
+        print("Get User of class " + klasse)
+        students = ""
+        if klasse == "none":
+            # Schüler ohne Klasse zurückgeben
+            students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}, {"schuelerNr":"6" , "firstname":"Eico" , "lastname":"Eillary" , "geschlecht":"u"}]}'
+        else:
+            # Schüler einer bestimmte Klasse zurückgeben
+            students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}]}'
+        
+        return students
+
+@app.route('/settings/class/addstudent')
+def addUser():
+    #
+    # Benutzer mit ID zu Klasse hinzufügen
+    #
+    if request.args.get('id') == None or request.args.get('klasse') == None:
+        return "error"
+    else: 
+        id = request.args.get('id')
+        klasse = request.args.get('klasse')
+        print("Add user #" + id + " to Class " + klasse + "\n")
+        return "success"
+
+@app.route('/settings/class/removestudent')
+def removeUser():
+    #
+    # Benutzer mit ID aus Klasse entfernen
+    #
+    if request.args.get('id') == None:
+        return "error"
+    else: 
+        id = request.args.get('id')
+        print("Remove user #" + id)
+        return "success"
+
+@app.route('/settings/gradelevel/getdisciplines')
+def getdiscipline():
+    #
+    # eingetragene Disziplinen der Klassenstufe zurückgeben
+    #
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        # bei keinen vorhanden Disziplinen "" zurückgeben
+        data = "sprint,50,h;laufen,1000;kugelstoss;schleuderball;ballwurf,200"
+        return data
+
+@app.route('/settings/gradelevel/removediscipline')
+def removediscipline():
+    #
+    # Disziplin von Klassenstufe entfernen
+    #
+    if request.args.get('gradelevel') == None or request.args.get('discipline') == None:
+        return "error"
+    else:
+        gradelevel = request.args.get('gradelevel')
+        discipline = request.args.get('discipline')
+        print("Remove discipline '" + discipline + "' from gradelevel #" + gradelevel)
+        return "success"
+
+@app.route('/settings/gradelevel/adddiscipline')
+def adddiscipline():
+    # 
+    # Disziplin einer Klassenstufe hinzufügen
+    #
+    if request.args.get('data') == None:
+        return "error"
+    else:
+        arg = request.args.get('data')
+        data = arg.split(',')
+        print("Add '" + data[1] + "' to Grade Level #" + data[0])
+        gradelevel = data[0]
+        discipline = data[1]
+        if discipline == "sprint":
+            distanz = data[2]
+            messung = data[3]
+            print("Sprint - " + distanz + "m " + messung)
+        elif discipline == "laufen":
+            distanz = data[2]
+            print("Laufen " + distanz + "m")
+        elif discipline == "ballwurf":
+            gewicht = data[2]
+            print("Ballwurf " + gewicht + "g")
+        else:
+            print("Andere Disziplin - " + discipline)
+        return "success"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

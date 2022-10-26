@@ -115,19 +115,16 @@
         tblKlassenstufen = document.getElementById("tblKlassenstufen");
         html = "";
         for (i = 0; i < _klassenstufen.length; i++) {
-            html += "<tr class='clickable' onclick='clickKlassenstufe(" + i + ")'><td>" + _klassenstufen[i] + "</td><td style='text-align: right;'><i class='fa-solid fa-gear' onclick='aenderKlassenstufe(" + i + ")'></i> <i class='fa-solid fa-trash-can' onclick='löscheKlassenstufe(" + i + ")'></i></td></tr>"
+            html += "<tr onclick='clickKlassenstufe(" + i + ")'><td>" + _klassenstufen[i] + "</td><td style='text-align: right;'><i class='fa-solid fa-gear clickable' onclick='aenderKlassenstufe(" + i + ")'></i></td></tr>"
         }
         tblKlassenstufen.innerHTML = html;
     }
 
     function aenderKlassenstufe(index) {
         console.log("Ändere Klassenstufe #" + index);
+        window.location.href = "/settings/gradelevel?id=" + index;
     }
-    
-    function löscheKlassenstufe(index) {
-        console.log("Lösche Klassenstufe #" + index);
-    }
-    
+        
     function aenderKlasse(index) {
         console.log("Ändere Klasse #" + index);
         //window.location.replace("/settings/class?class=" + _klassen[_aktuelleKlassenstufe][index][0]);

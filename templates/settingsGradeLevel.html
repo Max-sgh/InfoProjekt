@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %} Klasse {{klasse}} {% endblock %}
+
+{% block header%}
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+
+    .fa-solid {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+</style>
+<script>
+    _klassenstufe = "{{klassenstufe}}";
+    _disziplinen = "";
+    _disziplinenVerfugbar = ["sprint", "laufen", "hochsprung", "weitsprung", "kugelstoss", "schleuderball", "ballwurf"];
+    _alledisziplinen = ["sprint", "laufen", "hochsprung", "weitsprung", "kugelstoss", "schleuderball", "ballwurf"]
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Klassenstufe {{klassenstufe}}</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+<div id="alertPlaceholder"></div>
+
+<div id="content" style="margin-left: 20px;">
+    <table class="table table-striped table-condensed">
+        <thead class="bg-dark" , style="color: white;">
+            <tr>
+                <td>Disziplin</td>
+                <td>Distanz/Gewicht</td>
+                <td colspan="2">Messmethode</td>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+        </tbody>
+    </table>
+    <div class="d-flex flex-row-reverse">
+        <button type="button" onclick="erstelleModal()" class="btn btn-lg btn-dark flex-row-reverse" style="width: 15%;"
+            data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
+    </div>
+
+    <div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="staticBackdropLabel">Disziplin hinzufügen</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <select id="modalSelect" onchange="selectChanged()" class="form-select">
+                        <option>Bitte Disziplin auswählen</option>
+                        <option>Sprint</option>
+                        <option>Laufen</option>
+                        <option>Hochsprung</option>
+                        <option>Weitsprung</option>
+                        <option>Kugelstoß</option>
+                        <option>Schleuderball</option>
+                        <option>Ballwurf</option>
+                    </select>
+
+                    <div id="modalExtra">
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                    <button type="button" class="btn btn-primary" onclick="save()">Speichern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<template id="templateSprint">
+    <select id="modalSelectSprint" class="form-select" style="margin-top: 10px;">
+        <option>50m</option>
+        <option>75m</option>
+        <option>100m</option>
+    </select>
+    <div class="form-check" style="margin-top: 10px;">
+        <input class="form-check-input" type="radio" name="radioMessung" id="radioHandmessung" checked>
+        <label class="form-check-label" for="radioHandmessung">
+            Handmessung
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="radioMessung" id="radioEMessung">
+        <label class="form-check-label" for="radioEMessung">
+            Elektronische Messung
+        </label>
+    </div>
+</template>
+<template id="templateLaufen">
+    <select id="modalSelectLaufen" class="form-select" style="margin-top: 10px;">
+        <option>1000m</option>
+        <option>2000m</option>
+        <option>3000m</option>
+    </select>
+</template>
+<template id="templateBallwurf">
+    <select id="modalSelectBallwurf" class="form-select" style="margin-top: 10px;">
+        <option>200g-Ballwurf</option>
+        <option>80g-Schlagballwurf</option>
+    </select>
+</template>
+
+<script>
+    function erstelleModal() {
+        document.getElementById("modalSelect").selectedIndex = 0;
+        selectChanged();
+        html = "<option>Bitte Disziplin auswählen</option>";
+        for (i = 0; i < _disziplinenVerfugbar.length; i++) {
+            disziplin = _disziplinenVerfugbar[i];
+            if (disziplin == "sprint")
+                html += "<option>Sprint</option>";
+            else if (disziplin == "laufen")
+                html += "<option>Laufen</option>";
+            else if (disziplin == "hochsprung")
+                html += "<option>Hochsprung</option>";
+            else if (disziplin == "weitsprung")
+                html += "<option>Weitsprung</option>";
+            else if (disziplin == "kugelstoss")
+                html += "<option>Kugelstoß</option>";
+            else if (disziplin == "schleuderball")
+                html += "<option>Schleuderball</option>";
+            else if (disziplin == "ballwurf")
+                html += "<option>Ballwurf</option>";
+        }
+        document.getElementById("modalSelect").innerHTML = html;
+    }
+
+    function btnCloseClick() {
+        window.location.href = "/settings?section=class";
+    }
+
+    function selectChanged() {
+        select = document.getElementById("modalSelect").value;
+        html = "";
+        if (select == "Sprint") {
+            html = document.getElementById("templateSprint").innerHTML;
+        } else if (select == "Laufen") {
+            html = document.getElementById("templateLaufen").innerHTML;
+        } else if (select == "Ballwurf") {
+            html = document.getElementById("templateBallwurf").innerHTML;
+        } else {
+            html = "";
+        }
+        document.getElementById("modalExtra").innerHTML = html;
+    }
+
+    function save() {
+        disziplin = document.getElementById("modalSelect").value;
+        data = "";
+        if (disziplin == "Bitte Disziplin auswählen") {
+            $('#staticBackdrop').modal('hide');
+        } else if (disziplin == "Sprint") {
+            distanz = document.getElementById("modalSelectSprint").value;
+            if (distanz == "50m")
+                distanz = "50";
+            else if (distanz == "75m")
+                distanz = "75";
+            else
+                distanz = "100"
+            messung = document.getElementById("radioHandmessung").checked == true ? "h" : "e";
+            data = _klassenstufe + ",sprint," + distanz + "," + messung;
+        } else if (disziplin == "Laufen") {
+            distanz = document.getElementById("modalSelectLaufen").value;
+            if (distanz == "1000m")
+                distanz = "1000";
+            else if (distanz == "2000m")
+                distanz = "2000";
+            else
+                distanz = "3000";
+            data = _klassenstufe + ",laufen," + distanz;
+        } else if (disziplin == "Hochsprung")
+            data = _klassenstufe + ",hochsprung";
+        else if (disziplin == "Weitsprung")
+            data = _klassenstufe + ",weitsprung";
+        else if (disziplin == "Kugelstoß")
+            data = _klassenstufe + ",kugelstoss";
+        else if (disziplin == "Schleuderball")
+            data = _klassenstufe + ",schleuderball";
+        else if (disziplin == "Ballwurf") {
+            gewicht = document.getElementById("modalSelectBallwurf").value == "200g-Ballwurf" ? "200" : "80";
+            data = _klassenstufe + ",ballwurf," + gewicht;
+        }
+
+        console.log(data);
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    getdisciplines();
+                }
+                $('#staticBackdrop').modal('hide');
+            }
+        }
+        xhr.open("GET", "/settings/gradelevel/adddiscipline?data=" + data, true);
+        xhr.send();
+
+    }
+
+    function getdisciplines() {
+        _disziplinenVerfugbar = Array.from(_alledisziplinen);
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                console.log(response);
+                _disziplinen = response;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    _disziplinen = "";
+                }
+                erstelleTabelle();
+            }
+        }
+        xhr.open("GET", "/settings/gradelevel/getdisciplines?id=" + _klassenstufe, true);
+        xhr.send();
+    }
+
+    function erstelleTabelle() {
+        disziplinen = _disziplinen.split(";");
+        console.log(disziplinen);
+        if (_disziplinen == "") {
+            document.getElementById("tbody").innerHTML = '<tr><td colspan="4" style="font-style: italic; text-align: center;">Keine Einträge vorhanden</td></tr>';
+            return;
+        }
+        html = "";
+        for (i = 0; i < disziplinen.length; i++) {
+            disziplin = disziplinen[i].split(",")[0];
+            if (disziplin == "sprint") {
+                distanz = disziplinen[i].split(",")[1];
+                messung = disziplinen[i].split(",")[2] == "h" ? "Handmessung" : "Elektronische Messung";
+                if (distanz == "50")
+                    distanz = "50m";
+                else if (distanz == "75")
+                    distanz = "75m";
+                else
+                    distanz = "100m"
+                html += "<tr><td>Sprint</td><td>" + distanz + "</td><td>" + messung + "</td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            } else if (disziplin == "laufen") {
+                distanz = disziplinen[i].split(",")[1];
+                if (distanz == "1000")
+                    distanz = "1000m";
+                else if (distanz == "2000")
+                    distanz = "2000m";
+                else
+                    distanz = "3000m";
+                html += "<tr><td>Laufen</td><td>" + distanz + "</td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            } else if (disziplin == "hochsprung")
+                html += "<tr><td>Hochsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            else if (disziplin == "weitsprung")
+                html += "<tr><td>Witsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            else if (disziplin == "kugelstoss")
+                html += "<tr><td>Kugelstoß</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            else if (disziplin == "schleuderball")
+                html += "<tr><td>Schleuderball</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            else if (disziplin == "ballwurf") {
+                gewicht = disziplinen[i].split(",")[1] == "200" ? "200g-Ballwurf" : "80g-Schlagballwurf";
+                html += "<tr><td>Ballwurf</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            }
+            index = _disziplinenVerfugbar.indexOf(disziplin);
+            if (index != -1) 
+                _disziplinenVerfugbar.splice(index, 1);
+        }
+        document.getElementById("tbody").innerHTML = html;
+        console.log(_disziplinenVerfugbar);
+    }
+
+    function removeDiscipline(disziplin) {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    getdisciplines();
+                }
+            }
+        }
+        xhr.open("GET", "/settings/gradelevel/removediscipline?gradelevel=" + _klassenstufe + "&discipline=" + disziplin, true);
+        xhr.send();
+    }
+    getdisciplines();
+</script>
+{% endblock %}
