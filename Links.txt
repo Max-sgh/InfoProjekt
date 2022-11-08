@@ -4,3 +4,9 @@ https://bootsnipp.com/snippets/VDrZ
 
 SQL:
 https://www.python-kurs.eu/sql_python.php
+
+
+
+https://www.websense.com/content/support/library/web/hosted/dsc_admin/example_schema.aspx
+https://blog.thomastoye.be/python-ldap-authentication-with-microsoft-active-directory-46661bebc483
+https://eick-at.de/moodle/mod/page/view.php?id=330

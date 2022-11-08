@@ -21,9 +21,4 @@ class Schueler {
         this.punkteGesamt = punkte;
         this.geschlecht = geschlecht;
     }*/
-
-    sendeWert(wert) {
-        //wert = inpWert.value;
-        console.log(this.vorname + " " + this.nachname + " - " + this.schuelerNr + ": " + wert);
-    }
 }

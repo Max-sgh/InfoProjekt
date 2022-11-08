@@ -1,9 +1,9 @@
-from abc import abstractmethod
+import math
 
 class Disziplin:
     _name = ""
-    _a = 0
-    _c = 0
+    _aW = 0
+    _cW = 0
     _messung = ''
     _zuschlag = 0
 
@@ -11,7 +11,5 @@ class Disziplin:
         pass
 
     @staticmethod
-    def berechnePunkte(self, klassenstufe, wert):
-        punkte = 0
-        # Berechnung
-        return punkte
+    def berechnePunkte(self):
+        pass

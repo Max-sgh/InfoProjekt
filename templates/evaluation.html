@@ -15,6 +15,10 @@
     .filterable {
         cursor: pointer;
     }
+
+    .clickable {
+        cursor: pointer;
+    }
 </style>
 <script src="static/schueler.js"></script>
 <script>
@@ -229,12 +233,16 @@
     function tabelleErstellen() {
         var html = "";
         for (i = 0; i < _aktuelleAuswahl.length; i++) {
-            html += "<tr><td>" + _aktuelleAuswahl[i].schuelerNr + "</td><td>" + _aktuelleAuswahl[i].nachname + "</td><td>" + _aktuelleAuswahl[i].vorname + "</td><td>" + _aktuelleAuswahl[i].klasse + "</td><td>" + _aktuelleAuswahl[i].geschlecht + "</td><td>" + _aktuelleAuswahl[i].punkteGesamt + "</td></tr>";
+            html += "<tr class='clickable' onclick='clickStudent(" + _aktuelleAuswahl[i].schuelerNr + ")'><td>" + _aktuelleAuswahl[i].schuelerNr + "</td><td>" + _aktuelleAuswahl[i].nachname + "</td><td>" + _aktuelleAuswahl[i].vorname + "</td><td>" + _aktuelleAuswahl[i].klasse + "</td><td>" + _aktuelleAuswahl[i].geschlecht + "</td><td>" + _aktuelleAuswahl[i].punkteGesamt + "</td></tr>";
         }
         if (_aktuelleAuswahl.length == 0) {
             html = "<tr><td colspan=6 style='text-align: center; font-style: italic;'>Keine Suchergebnisse</td></tr>";
         }
         document.getElementById("tbody").innerHTML = html;
+    }
+
+    function clickStudent (schuelerNr) {
+        window.location.href = "/student?id=" + schuelerNr;
     }
 
     // Select für Klassen erstellen

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %} Schüler bearbeiten {% endblock %}
+
+{% block header%}
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+
+    .fa-solid {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+</style>
+<script src="static/schueler.js"></script>
+<script>
+    _schueler = new Schueler("Aico", "Aillary", 123);
+    _schueler.geschlecht = "m";
+    _schueler.klasse = "5a";
+    _mode = "";
+    _werte = [];
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Aico Aillary</h1>
+</div>
+<div id="alertPlaceholder"></div>
+<div id="content" style="margin-left: 20px;">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <p><b>Stammdaten:</b></p>
+                    <p id="lblVorname"></p>
+                    <p id="lblNachname"></p>
+                    <p id="lblSchuelerNr"></p>
+                    <p id="lblKlasse"></p>
+                    <p id="lblGeschlecht"></p>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" style="margin-right: 2px;" role="button"
+                            onclick="btnChangeStudentClicked()">Daten ändern</button>
+                        <button class="btn btn-danger" role="button" onclick="btnDeleteClicked()">Schüler
+                            löschen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <p><b>Erziehlte Werte:</b></p>
+                    <div id="placeholderWerte"></div>
+                    <hr>
+                    <div id="placeholderPunkteGesamt"></div>
+                    <div class="row">
+                        <div class="col">Platz Klasse 5 männlich: </div>
+                        <div class="col">2</div>
+                        <div class="col"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">Platz Gesamt männlich: </div>
+                        <div class="col">25</div>
+                        <div class="col"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">Platz Gesamt: </div>
+                        <div class="col">53</div>
+                        <div class="col"></div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" style="margin-right: 2px;" role="button"
+                            onclick="btnChangeDataClicked()">Daten ändern</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modal-title"></h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-primary" onclick="btnSaveClicked()">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+<template id="changeStudentData">
+    <label for="inpFistname" class="form-label">Vorname:</label>
+    <input type="text" class="form-control" id="inpFirstname" value="">
+    <label for="inpLastname" class="form-label">Nachname:</label>
+    <input type="text" class="form-control" id="inpLastname" value="">
+    <label for="inpFistname" class="form-label">Geschlecht:</label>
+    <select class="form-select" id="selectGender">
+        <option>männlich</option>
+        <option>weiblich</option>
+    </select>
+</template>
+
+
+<script>
+    function btnChangeStudentClicked() {
+        document.getElementById("modal-title").innerText = "Schüler bearbeiten";
+        $('#staticBackdrop').modal('show');
+        document.getElementById("modal-body").innerHTML = document.getElementById("changeStudentData").innerHTML;
+        document.getElementById("inpFirstname").value = _schueler.vorname;
+        document.getElementById("inpLastname").value = _schueler.nachname;
+        if (_schueler.geschlecht == "m") {
+            document.getElementById("selectGender").selectedIndex = 0;
+        } else {
+            document.getElementById("selectGender").selectedIndex = 1;
+        }
+        _mode = "changeStudent";
+    }
+
+    function btnDeleteClicked() {
+        if (confirm("Sind Sie sicher, dass Sie diesen Schüler und alle eingetragenen Werte löschen möchten?")) {
+            console.log("Ja");
+        } else {
+            console.log("Nein");
+        }
+    }
+
+    function btnChangeDataClicked() {
+        html = "";
+        for (i = 0; i < _werte.length; i++) {
+            wert = _werte[i];
+            disziplin = wert[0];
+            if (disziplin == "sprint50") {
+                disziplinAnzeige = "Sprint (50m)";
+            }
+            else if (disziplin == "sprint75") {
+                disziplinAnzeige = "Sprint (75m)";
+            }
+            else if (disziplin == "sprint100") {
+                disziplinAnzeige = "Sprint (100m)";
+            }
+            else if (disziplin == "laufen800") {
+                disziplinAnzeige = "Laufen (800m)";
+            }
+            else if (disziplin == "laufen1000") {
+                disziplinAnzeige = "Laufen (1000m)";
+            }
+            else if (disziplin == "laufen2000") {
+                disziplinAnzeige = "Laufen (2000m)";
+            }
+            else if (disziplin == "laufen3000") {
+                disziplinAnzeige = "Laufen (3000m)";
+            }
+            else if (disziplin == "hochsprung") {
+                disziplinAnzeige = "Hochsprung";
+            }
+            else if (disziplin == "weitsprung") {
+                disziplinAnzeige = "Weitsprung";
+            }
+            else if (disziplin == "kugelstoss") {
+                disziplinAnzeige = "Kugelstoß";
+            }
+            else if (disziplin == "schleuderball") {
+                disziplinAnzeige = "Schleuderball";
+            }
+            else if (disziplin == "ballwurf200") {
+                disziplinAnzeige = "200g-Ballwurf";
+            }
+            else if (disziplin == "ballwurf80") {
+                disziplinAnzeige = "80g-Schlagballwurf";
+            }
+
+            html += '<label for="inp' + disziplin + '" class="form-label">' + disziplinAnzeige + ':</label> \
+                     <input type="text" class="form-control" id="inp' + disziplin + '" value="' + wert[1] + '">';
+        }
+        document.getElementById("modal-title").innerText = "Werte bearbeiten";
+        $('#staticBackdrop').modal('show');
+        document.getElementById("modal-body").innerHTML = html;
+        _mode = "changeData";
+
+    }
+
+    function btnSaveClicked() {
+        if (_mode == "changeStudent") {
+            vorname = document.getElementById("inpFirstname").value;
+            nachname = document.getElementById("inpLastname").value;
+            geschlecht = document.getElementById("selectGender").selectedIndex == 0 ? "m" : "w";
+            if (vorname != _schueler.vorname || nachname != _schueler.nachname || geschlecht != _schueler.geschlecht) {
+                xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        response = xhr.responseText;
+                        if (response == "error") {
+                            document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                        } else {
+                            reloadData();
+                        }
+                        $('#staticBackdrop').modal('hide');
+                    }
+                }
+                xhr.open("POST", "/student/changeData", true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.send("id=" + _schueler.schuelerNr + "&firstname=" + vorname + "&lastname=" + nachname + "&gender=" + geschlecht);
+                _schueler.vorname = vorname;
+                _schueler.nachname = nachname;
+                _schueler.geschlecht = geschlecht;
+            } else {
+                console.log("no changes");
+                $('#staticBackdrop').modal('hide');
+            }
+        } else if (_mode == "changeData") {
+            anzahl = 0;
+            string = "";
+            for (i = 0; i < _werte.length; i++) {
+                wert = document.getElementById("inp" + _werte[i][0]).value;
+                if (wert != _werte[i][1]) {
+                    anzahl++;
+                    string += _werte[i][0] + "\t" + wert + "\n";
+                }
+            }
+            if (anzahl == 0) {
+                console.log("no changes");
+                $('#staticBackdrop').modal('hide');
+            } else {
+                console.log(string);
+                xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        response = xhr.responseText;
+                        if (response == "error") {
+                            document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                        } else {
+                            getMeasurements();
+                        }
+                        $('#staticBackdrop').modal('hide');
+                    }
+                }
+                xhr.open("POST", "/student/changemeasurements", true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.send("id=" + _schueler.schuelerNr + "&string=" + string);
+            }
+        }
+    }
+
+    function reloadData() {
+        document.getElementById("lblVorname").innerText = "Vorname: " + _schueler.vorname;
+        document.getElementById("lblNachname").innerText = "  Nachname: " + _schueler.nachname;
+        document.getElementById("lblSchuelerNr").innerText = "  Schülernummer: " + _schueler.schuelerNr;
+        document.getElementById("lblKlasse").innerText = "  Klasse: " + _schueler.klasse;
+        document.getElementById("lblGeschlecht").innerText = "  Geschlecht: " + (_schueler.geschlecht == "m" ? "männlich" : "weiblich");
+    }
+    reloadData();
+
+    function getMeasurements() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                console.log(response);
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split('\n');
+                    html = "";
+                    punkteGesamt = 0;
+                    for (i = 0; i < lines.length - 1; i++) {
+                        disziplin = lines[i].split('\t')[0];
+                        wert = lines[i].split('\t')[1];
+                        punkte = lines[i].split('\t')[2];
+                        punkteGesamt += parseInt(punkte);
+                        console.log(disziplin + ": " + wert + " --> " + punkte);
+                        /*
+                        <div class="row">
+                        <div class="col">Sprint (50m): 2,5s</div>
+                        <div class="col">= 512 Punkte</div>
+                        <div class="col"></div>
+                        </div>
+                        */
+                        _werte.push([disziplin, wert]);
+                        einheit = "";
+                        if (disziplin == "sprint50") {
+                            disziplin = "Sprint (50m)";
+                            einheit = "s";
+                        }
+                        else if (disziplin == "sprint75") {
+                            disziplin = "Sprint (75m)";
+                            einheit = "s";
+                        }
+                        else if (disziplin == "sprint100") {
+                            disziplin = "Sprint (100m)";
+                            einheit = "s";
+                        }
+                        else if (disziplin == "laufen800") {
+                            disziplin = "Laufen (800m)";
+                            einheit = "min";
+                        }
+                        else if (disziplin == "laufen1000") {
+                            disziplin = "Laufen (1000m)";
+                            einheit = "min";
+                        }
+                        else if (disziplin == "laufen2000") {
+                            disziplin = "Laufen (2000m)";
+                            einheit = "min";
+                        }
+                        else if (disziplin == "laufen3000") {
+                            disziplin = "Laufen (3000m)";
+                            einheit = "min";
+                        }
+                        else if (disziplin == "hochsprung") {
+                            disziplin = "Hochsprung";
+                            einheit = "m";
+                        }
+                        else if (disziplin == "weitsprung") {
+                            disziplin = "Weitsprung";
+                            einheit = "m";
+                        }
+                        else if (disziplin == "kugelstoss") {
+                            disziplin = "Kugelstoß";
+                            einheit = "m";
+                        }
+                        else if (disziplin == "schleuderball") {
+                            disziplin = "Schleuderball";
+                            einheit = "m";
+                        }
+                        else if (disziplin == "ballwurf200") {
+                            disziplin = "200g-Ballwurf";
+                            einheit = "m";
+                        }
+                        else if (disziplin == "ballwurf80") {
+                            disziplin = "80g-Schlagballwurf";
+                            einheit = "m";
+                        }
+
+                        html += '<div class="row"> \
+                        <div class="col">' + disziplin + ': ' + wert + einheit + '</div> \
+                        <div class="col">= ' + punkte + ' Punkte</div> \
+                        <div class="col"></div>\
+                        </div>'
+                    }
+                    document.getElementById("placeholderWerte").innerHTML = html;
+                    document.getElementById("placeholderPunkteGesamt").innerHTML = '<div class="row" style="font-weight: bold;"><div class="col">Gesamt:</div><div class="col">' + punkteGesamt + ' Punkte</div><div class="col"></div></div>'
+                }
+                //$('#staticBackdrop').modal('hide');
+            }
+        }
+        xhr.open("GET", "/student/getmeasurements?id=" + _schueler.schuelerNr, false);
+        xhr.send();
+        //
+        // TODO: Platzierung in einzelnen Kategorien vom Server holen und darstellen 
+        // (SQL - alle Werte größer als Punktegesamt --> zählen)
+        //
+
+    }
+    getMeasurements();
+</script>
+
+
+{% endblock %}

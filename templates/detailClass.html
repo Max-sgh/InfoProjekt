@@ -6,77 +6,202 @@
     th {
         padding: 10px;
     }
+
     .btn:focus {
         outline: none !important;
-        box-shadow: none; 
+        box-shadow: none;
     }
-    
+
+    .errorText {
+        text-align: left;
+        font-weight: bold;
+    }
 </style>
 <script src="static/schueler.js"></script>
 <script>
     _schueler = [];
+    _klasse = "{{className}}";
+    _disziplin = "{{discipline}}"
+    _stationsId = 5
+    {% for s in schueler %}
+    var vorname = "{{s[1]}}";
+    var nachname = "{{s[2]}}";
+    var schuelerNr = "{{s[0]}}";
+    schueler = new Schueler(vorname, nachname, schuelerNr);
+    _schueler.push(schueler);
+    {% endfor %}
+    _anzahlRichtigeWerte = 0;
+    _anzahlAntworten = 0;
 </script>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex">
-<h1 class="fs-1 fw-normal p-2 flex-grow-1">Klasse {{className}}</h1>
-<button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1">Klasse {{className}}</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
 </div>
 
 <table class="table table-striped table-codensed">
     <thead>
         <tr class="bg-dark" style="color: white">
-            <th>Name</th>
-            <th>Vorname</th>
-            <th>Wert</th>
+            <th style="width: 15%;">Name</th>
+            <th style="width: 15%;">Vorname</th>
+            <th colspan="2" style="width: 40%;">Wert</th>
         </tr>
     </thead>
-    <tbody>
-        {% for s in schueler%}
-        <tr>
-            <td>{{s[1]}}</td>
-            <td>{{s[2]}}</td>
-            <td><input type="text" class="form-control w-25" oninput="checkInput(this)" id="{{s[0]}}"/></td>
-        </tr>
-        <script>
-            var vorname = "{{s[1]}}";
-            var nachname = "{{s[2]}}";
-            var schuelerNr = "{{s[0]}}";
-            schueler = new Schueler(vorname, nachname, schuelerNr);
-            _schueler.push(schueler);
-        </script>
-        {% endfor %}
+    <tbody id="tbody">
     </tbody>
 </table>
 <div class="d-flex flex-row-reverse">
-    <button role="button" text="Abschließen" class="btn btn-lg btn-primary flex-row-reverse" style="width: 15%;" onclick="btnSaveClicked()">Speichern</button>
+    <button role="button" text="Abschließen" class="btn btn-lg btn-primary flex-row-reverse" style="width: 15%;"
+        onclick="btnSaveClicked()">Speichern</button>
+</div>
+<div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Werte überprüfen</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group" id="modalErrorList">
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-primary" onclick="save()" id="modalBtnSave">Bestätigen und Abschließen</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
+
 <script>
-    function checkInput(input) {
-      var str = input.value;
-      if (str.match(/[a-zA-Z]/g) == null) {
-        return;
-      }
-      var length = str.match(/[a-zA-Z]/g).length;
-      if (length != 0) {
-        alert("Fehler");
-      }
+    function checkInput(input, index) {
+        var str = input.value;
+        if (str.match(/[a-zA-Z]/g) == null) {
+            text = document.getElementById("errorText" + index);
+            text.style = "visibility: hidden; color: red;";
+            return true;
+        }
+        var length = str.match(/[a-zA-Z]/g).length;
+        if (length != 0) {
+            text = document.getElementById("errorText" + index);
+            text.style = "visibility: visible; color: red;";
+            return false;
+        }
     }
+
+    function erstelleTabelle() {
+        tabelle = document.getElementById("tbody");
+        html = "";
+        for (i = 0; i < _schueler.length; i++) {
+            html += '<tr> \
+            <td id="nachname' + i + '">' + _schueler[i].nachname + '</td> \
+            <td id="vorname' + i + '">' + _schueler[i].vorname + '</td> \
+            <td><input type="text" class="form-control" oninput="checkInput(this, ' + i + ')" id="inp' + i + '" name="' + _schueler[i].schuelerNr + '"/></td> \
+            <td class="errorText"><p style="visibility: hidden; color:red;" id="errorText' + i + '">Falsche Eingabe - Bitte nur Zahlen und Kommas verwenden</p></td></tr>'
+        }
+        tabelle.innerHTML = html;
+    }
+
+    erstelleTabelle();
 
     function btnCloseClick() {
         window.location.href = "/";
     }
 
     function btnSaveClicked() {
-        document.getElementById("LoadingAnimation").style = "visibility: visible;"
+        $('#staticBackdrop').modal('show');
+        htmlErrors = ""
+        isError = false;
+        isCritical = false;
         for (i = 0; i < _schueler.length; i++) {
-            var wert = document.getElementById(_schueler[i].schuelerNr).value;
-            _schueler[i].sendeWert(wert);
+            input = document.getElementById("inp" + i);
+            schuelerNr = input.name;
+            schueler = null;
+            for (j = 0; j < _schueler.length; j++) {
+                if (_schueler[j].schuelerNr == schuelerNr)
+                    schueler = _schueler[j];
+            }
+            if (input.value == "") {
+                htmlErrors += '<li class="list-group-item list-group-item-info">Bei ' + schueler.vorname + ' ' + schueler.nachname + ' ist kein Wert eingetragen - Bitte Richtigkeit bestätigen</li>'
+                isError = true;
+            }
+            if (!checkInput(input, i)) {
+                console.log("Error!");
+                htmlErrors += '<li class="list-group-item list-group-item-danger">Ungültige Eingabe bei ' + schueler.vorname + ' ' + schueler.nachname + '</li>';
+                isCritical = true;
+                document.getElementById("modalBtnSave").disabled = true;
+                continue;
+            }
         }
-        window.location.href = "/";
+        //
+        // Durchschnitt und Abweichung berechnen 
+        //
+        durchschnitt = 0.0;
+        summe = 0.0;
+        for (i = 0; i < _schueler.length; i++) {
+            summe += parseFloat(document.getElementById("inp" + i).value);
+        }
+        durchschnitt = summe / _schueler.length;
+        obereGrenze = durchschnitt + (durchschnitt/2);
+        untereGrenze = durchschnitt - (durchschnitt/2) < 0 ? 0 : durchschnitt - (durchschnitt/2);
+
+        for (i = 0; i < _schueler.length; i++) {
+            if (parseFloat(document.getElementById("inp" + i).value) > obereGrenze || parseFloat(document.getElementById("inp" + i).value) < untereGrenze) {
+                htmlErrors += '<li class="list-group-item list-group-item-warning">Möglicher falscher Wert bei ' + _schueler[i].vorname + ' ' + _schueler[i].nachname + ' - Wert weicht um mehr als die Hälfte vom Durchschnitt ab. Bitte bestätigen Sie die Richtigkeit.</li>';
+                isError = true;
+                continue;
+            }
+        }
+        if (!isError && !isCritical) {
+            htmlErrors += '<li class="list-group-item list-group-item-success">Keine Fehler gefunden.</li>';
+        }
+
+        document.getElementById("modalErrorList").innerHTML = htmlErrors;
+    }
+
+    function save() {
+        _anzahlAntworten = 0;
+        _anzahlRichtigeWerte = 0;
+        document.getElementById("LoadingAnimation").style = "visibility: visible;";
+
+        for (i = 0; i < _schueler.length; i++) {
+            if (document.getElementById("inp" + i).value == "") {
+                continue;
+            }
+            _anzahlRichtigeWerte++;
+        }
+        for (i = 0; i < _schueler.length; i++) {
+            if (document.getElementById("inp" + i).value == "") {
+                continue;
+            }
+            wert = parseFloat(document.getElementById("inp" + i).value);
+            schuelerNr = document.getElementById("inp" + i).name;
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    console.log(response);
+                    _anzahlAntworten++;
+                    console.log(response + " " + _anzahlRichtigeWerte + " " + _anzahlAntworten);
+
+                    if (_anzahlAntworten == _anzahlRichtigeWerte) {
+                        document.getElementById("LoadingAnimation").style = "visibility: hidden;";
+                        window.location.href = "/";
+                    }
+                }
+            }
+            xhr.open("GET", "/class/addvalue?id=" + schuelerNr + "&stationsid=" + _stationsId + "&value=" + wert, false);
+            xhr.send();
+        }
+        if (_anzahlRichtigeWerte == 0) {
+            document.getElementById("LoadingAnimation").style = "visibility: hidden;";
+            window.location.href = "/";
+        }
     }
 </script>
 {% endblock %}

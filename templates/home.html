@@ -2,16 +2,23 @@
 {% block title%} Startseite {% endblock %}
 {% block header%}
 <style>
-    tbody tr{
+    .clickable{
         cursor: pointer;
     }
     th {
         padding: 10px;
     }
 </style>
+<script>
+    _klassen = []
+    _station = "{{station}}"
+    {% for k in classes %}
+        _klassen.push(["{{k[0]}}", "{{k[1]}}", "{{k[2]}}"]);
+    {% endfor %}
+</script>
 {% endblock %}
 {% block content %}
-<h1 class="fs-1 fw-normal">Station {{station}}</h1>
+<h1 class="fs-1 fw-normal" id="ueberschrift">Station {{station}}</h1>
 <!--<div class="panel panel-default">
     <div class="panel-body">
         <div class="">
@@ -31,36 +38,50 @@
 </div>
 -->
 
-<table class="table table-striped table-codensed">
-    <thead>
-        <tr class="bg-dark" style="color: white">
-            <th>Klasse</th>
-            <th>Anzahl Schüler</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr onclick="myFunction(5)">
-            <td>10a Jungen</td>
-            <td>10</td>
-            <td><h6><span class="badge text-bg-success">Abgeschlossen</span></h6></td>
-        </tr>
-        <tr onclick="myFunction(0)">
-            <td>10a Mädchen</td>
-            <td>10</td>
-            <td><h6><span class="badge text-bg-success">Abgeschlossen</span></h6></td>
-        </tr>
-        <tr onclick="myFunction(28)">
-            <td>10b Mädchen</td>
-            <td>16</td>
-            <td><h6><span class="badge text-bg-secondary">Offen</span></h6></td>
-        </tr>
-    </tbody>
-</table>
+<div id="content">
+    <table class="table table-striped table-codensed">
+        <thead>
+            <tr class="bg-dark" style="color: white">
+                <th>Klasse</th>
+                <th>Anzahl Schüler</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+        </tbody>
+    </table>    
+</div>
 
 <script>
-    function myFunction(id) {
-      window.location.href = "/class?id=" + id;
+    function erstelleTabelle() {
+        tabelle = document.getElementById("tbody");
+        html = "";
+        for (i = 0; i < _klassen.length; i++) {
+            click = _klassen[i][2] == "false" ? 'onclick="clicked(' + i + ')" class="clickable"' : '';
+            console.log(_klassen[i][0]);
+            badge = _klassen[i][2] == "true" ? 'text-bg-success">Abgeschlossen' : 'text-bg-secondary">Offen';
+            html += '<tr ' + click + '> \
+            <td>' + _klassen[i][0] + '</td> \
+            <td>' + _klassen[i][1] +'</td> \
+            <td><h6><span class="badge ' + badge + '</span></h6></td></tr>';
+        }
+        if (_klassen.length == 0) {
+            html = "<tr><td colspan='3' style='font-style: italic; text-align: center;'>Keine zugewiesenen Klassen vorhanden.</td></tr>"
+        }
+        tabelle.innerHTML = html;
+    }
+
+    function clicked(id) {
+      window.location.href = "/class?id=" + _klassen[id][0];
+    }
+
+    // bei gegebener Station und Klassen Tabelle erstellen
+    // bei keiner zugewiesenen Station Meldung an Nutzer ausgeben
+    if (_station == "none") {
+        document.getElementById("ueberschrift").innerText = "Keine Station zugewiesen";
+        document.getElementById("content").innerHTML = "Ihnen wurde vom Administrator keine Station zugewiesen. Sollte dies ein Fehler sein kontaktieren Sie bitte den Administrator.";
+    } else {
+        erstelleTabelle();
     }
 </script>
 
