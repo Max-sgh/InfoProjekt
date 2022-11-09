@@ -2,18 +2,18 @@ import sys
 import ldap
 
 
-AD_SERVERS = [ '192.168.178.54']
-AD_USER_BASEDN = "DC=srv-lange,DC=de"
+AD_SERVERS = ['172.20.0.2']
+AD_USER_BASEDN = "DC=gymsgh,DC=local"
 AD_USER_FILTER = '(&(objectClass=USER)(sAMAccountName={username}))'
 AD_USER_FILTER2 = '(&(objectClass=USER)(dn={userdn}))'
 AD_GROUP_FILTER = '(&(objectClass=GROUP)(cn={group_name}))'
-AD_BIND_USER = 'Administrator@srv-lange.de'
-AD_BIND_PWD = 'Rsu3sc123'
+#AD_BIND_USER = 'Administrator@srv-lange.de'
+#AD_BIND_PWD = 'Rsu3sc123'
 
 
 
 # ldap connection
-def ad_auth(username=AD_BIND_USER, password=AD_BIND_PWD, address=AD_SERVERS[0]):
+def ad_auth(username, password, address=AD_SERVERS[0]):
 	conn = ldap.initialize('ldap://' + address)
 	conn.protocol_version = 3
 	conn.set_option(ldap.OPT_REFERRALS, 0)
@@ -72,7 +72,7 @@ def get_group_members(group_name, ad_conn, basedn=AD_USER_BASEDN):
 			for m in members_tmp:
 				#email = get_email_by_dn(m, ad_conn)
 				print(m)
-				res = ad_conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=USER)(sAMAccountName=test))")
+				res = ad_conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=USER)(sAMAccountName=WAG))")
 				print(res[0][1]["memberOf"])
                 #
                 # Fehler: res[0][0]="None"
@@ -87,16 +87,29 @@ def get_group_members(group_name, ad_conn, basedn=AD_USER_BASEDN):
 
 if __name__ == "__main__":
   group_name = sys.argv[1]
-  ad_conn, result = ad_auth()
+  ad_conn, result = ad_auth("15073@gymsgh.local", "Rsu3sc123")
   print(ad_conn)
-  if result:
-    group_members = get_group_members(group_name, ad_conn)
-    for m in group_members:
-      print(m) # b'CN=Nurzum Test,CN=Users,DC=srv-lange,DC=de' \n [...]
+  #if result:
+    #group_members = get_group_members("Lehrer", ad_conn)
+    #for m in group_members:
+      #print(m) # b'CN=Nurzum Test,CN=Users,DC=srv-lange,DC=de' \n [...]
 
-  #res = ad_conn.search_s(AD_USER_BASEDN, ldap.SCOPE_SUBTREE), \
-   # "(&(objectClass=user)(member=uid=3,cn=users,dc=srv-lange,dc=de))"
-  #if res == "":
-    #print("No result")
-  
+#(member=sAMAccountName=WAG,DC=gymsgh,DC=local)
+  res = ad_conn.search_s(AD_USER_BASEDN, ldap.SCOPE_SUBTREE, \
+	 "(&(objectClass=user)(sAMAccountName=WAG))")
+  if res == "":
+    print("No result")
+  else: 
+    str = str(res[0][1]["memberOf"])
+    st = str.split("'")
+    for s in st:
+        if s == "[b":
+            continue
+        gruppen = s.split("=")
+        for g in gruppen:
+            g = g.split(",")[0]
+            if g == "Lehrer":
+                print("Zugang gewährt")
+            if g == "Sportfest":
+                print("Adminzugang")
   #print(res)
