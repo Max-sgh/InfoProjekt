@@ -3,17 +3,17 @@ from lib2to3.pgen2.token import STRING
 from msvcrt import kbhit
 from pickle import TRUE
 from sqlite3 import *
-
+zeiger = verbindung.cursor()
 
 #app = Flask(__name__, static_folder="static")
 
-schueler=('Schuelernummer','Jahrgang','Klasse','Geschlecht','Name','Vorname', 'Geburtsdatum')
-werte=("ID","StationsNr","SchülerNr","DisziplinID")
-station=("StationNr","Lehrer","DisziplinID")
-classes=("Name","Unterteilung m/w","Klassenstufe")
-disziplin=("DisziplinID","Name","Klassenstufe")
+sportfest=sqlite3.connect(sportfest.db)
+zeiger.execute()
+sportfest.commit()
 
 
+
+sportfest.close()
 
 
 
