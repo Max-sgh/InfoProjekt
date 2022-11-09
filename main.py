@@ -8,6 +8,7 @@ from flask import Flask, redirect, url_for, render_template, send_from_directory
 from datetime import date
 import sqlite3
 
+#'Schuelernummer','Jahrgang','Klasse','Geschlecht', Fahrschüler(unnötig),'Name','Vorname', 'Geburtsdatum'
 
 from sprint import Sprint
 #from ldapUtils import ldapUtils

@@ -3,17 +3,17 @@ from lib2to3.pgen2.token import STRING
 from msvcrt import kbhit
 from pickle import TRUE
 from sqlite3 import *
-
+zeiger = verbindung.cursor()
 
 #app = Flask(__name__, static_folder="static")
 
-schueler=('Schuelernummer','Jahrgang','Klasse','Geschlecht','Name','Vorname', 'Geburtsdatum')
-werte=("ID","StationsNr","SchülerNr","DisziplinID")
-station=("StationNr","Lehrer","DisziplinID")
-classes=("Name","Unterteilung m/w","Klassenstufe")
-disziplin=("DisziplinID","Name","Klassenstufe")
+schueler=sqlite3.connect('Schuelernummer','Jahrgang','Klasse','Geschlecht'. 'Name','Vorname', 'Geburtsdatum')
+zeiger.execute("CREATE TABLE schueler (Schuelernummer,Jahrgang,Klasse,Geschlecht VARCHAR(), ,Name VARCHAR(),Vorname VARCHAR(), Geburtsdatum DATE")
 
-
+werte=sqlite3.connect("ID","StationsNr","SchülerNr","DisziplinID")
+station=sqlite3.connect("StationNr","Lehrer","DisziplinID")
+classes=sqlite3.connect("Name","Unterteilung m/w","Klassenstufe")
+disziplin=sqlite3.connect("DisziplinID","Name","Klassenstufe")
 
 
 
