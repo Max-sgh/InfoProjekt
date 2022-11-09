@@ -14,43 +14,21 @@ class Sprung(Disziplin):
         self.cMWeit = 0.00219
         
 
-        self._zuschlag = 0.24
+        self._zuschlag = 0
 
-    def berechnePunkte(self, wert, geschlecht, messung, distanz) -> int:
+    def berechnePunkte(self, wert, geschlecht, art) -> int:
         punkte = 0
-        if messung == 'h':
-            if geschlecht == 'm' and distanz == 50:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aM50) / self.cM50
-            if geschlecht == 'w' and distanz == 50:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aW50) / self.cW50
-
-            if geschlecht == 'm' and distanz == 75:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aM75) / self.cM75
-            if geschlecht == 'w' and distanz == 75:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aW75) / self.cW75
-
-            if geschlecht == 'm' and distanz == 100:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aM100) / self.cM100
-            if geschlecht == 'w' and distanz == 100:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aW100) / self.cW100
-
-        if messung == 'e':
-            if geschlecht == 'm' and distanz == 50:
-                punkte = ((distanz / (wert)) - self.aM50) / self.cM50
-            if geschlecht == 'w' and distanz == 50:
-                punkte = ((distanz / (wert)) - self.aW50) / self.cW50
-
-            if geschlecht == 'm' and distanz == 75:
-                punkte = ((distanz / (wert)) - self.aM75) / self.cM75
-            if geschlecht == 'w' and distanz == 75:
-                punkte = ((distanz / (wert)) - self.aW75) / self.cW75
-
-            if geschlecht == 'm' and distanz == 100:
-                punkte = ((distanz / (wert)) - self.aM100) / self.cM100
-            if geschlecht == 'w' and distanz == 100:
-                punkte = ((distanz / (wert)) - self.aW100) / self.cW100
-
+        if geschlecht == 'm' and art == "hochsprung":
+            punkte = (math.sqrt(wert) - self.aMHoch / self.cMHoch)
+        if geschlecht == 'w' and art == "hochsprung":
+            punkte = (math.sqrt(wert) - self.aWHoch / self.cWHoch)
+        if geschlecht == 'm' and art == "weitsprung":
+            punkte = (math.sqrt(wert) - self.aMWeit / self.cMWeit)
+        if geschlecht == 'w' and art == "weitsprung":
+            punkte = (math.sqrt(wert) - self.aWWeit / self.cWWeit)
+            
         if punkte < 0:
             punkte = 0
             
         return math.floor(punkte)
+        

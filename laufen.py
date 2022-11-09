@@ -54,7 +54,7 @@ class Laufen(Disziplin):
 
             if geschlecht == 'm' and distanz == 1000:
                 punkte = ((distanz / (wert)) - self.aM1000) / self.cM1000
-            if geschlecht == 'w' and distanz == 75:
+            if geschlecht == 'w' and distanz == 1000:
                 punkte = ((distanz / (wert)) - self.aW1000) / self.cW1000
 
             if geschlecht == 'm' and distanz == 2000:
