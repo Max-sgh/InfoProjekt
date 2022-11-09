@@ -27,26 +27,25 @@ class Werfen (Disziplin):
     def berechnePunkte(self, wert, geschlecht, art) -> int:
         punkte = 0
         if geschlecht == 'm' and art == "kugelstoss":
-            punkte = (math.sqrt(wert) - self.aMKugel / self.cMKugel)
+            punkte = ((math.sqrt(wert) - self.aMKugel) / self.cMKugel)
         if geschlecht == 'w' and art == "kugelstoss":
-            punkte = (math.sqrt(wert) - self.aWKugel / self.cWKugel)
+            punkte = ((math.sqrt(wert) - self.aWKugel) / self.cWKugel)
         if geschlecht == 'm' and art == "schleuderball":
-            punkte = (math.sqrt(wert) - self.aMSchleuder / self.cMSchleuder)
+            punkte = ((math.sqrt(wert) - self.aMSchleuder) / self.cMSchleuder)
         if geschlecht == 'w' and art == "schleuderball":
-            punkte = (math.sqrt(wert) - self.aWSchleuder / self.cWSchleuder)
+            punkte = ((math.sqrt(wert) - self.aWSchleuder) / self.cWSchleuder)
         if geschlecht == 'm' and art == "ballwurf200":
-            punkte = (math.sqrt(wert) - self.aM200 / self.cM200)
+            punkte = ((math.sqrt(wert) - self.aM200) / self.cM200)
         if geschlecht == 'w' and art == "ballwurf200":
-            punkte = (math.sqrt(wert) - self.aW200 / self.cW200)
+            punkte = ((math.sqrt(wert) - self.aW200) / self.cW200)
         if geschlecht == 'm' and art == "ballwurf80":
-            punkte = (math.sqrt(wert) - self.aM80 / self.cM80)
+            punkte = ((math.sqrt(wert) - self.aM80) / self.cM80)
         if geschlecht == 'w' and art == "ballwurf80":
-            punkte = (math.sqrt(wert) - self.aW80 / self.cW80)
+            punkte = ((math.sqrt(wert) - self.aW80) / self.cW80)
             
         if punkte < 0:
             punkte = 0
             
         return math.floor(punkte)
         
-
 

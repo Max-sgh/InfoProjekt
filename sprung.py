@@ -19,13 +19,13 @@ class Sprung(Disziplin):
     def berechnePunkte(self, wert, geschlecht, art) -> int:
         punkte = 0
         if geschlecht == 'm' and art == "hochsprung":
-            punkte = (math.sqrt(wert) - self.aMHoch / self.cMHoch)
+            punkte = ((math.sqrt(wert) - self.aMHoch) / self.cMHoch)
         if geschlecht == 'w' and art == "hochsprung":
-            punkte = (math.sqrt(wert) - self.aWHoch / self.cWHoch)
+            punkte = ((math.sqrt(wert) - self.aWHoch) / self.cWHoch)
         if geschlecht == 'm' and art == "weitsprung":
-            punkte = (math.sqrt(wert) - self.aMWeit / self.cMWeit)
+            punkte = ((math.sqrt(wert) - self.aMWeit) / self.cMWeit)
         if geschlecht == 'w' and art == "weitsprung":
-            punkte = (math.sqrt(wert) - self.aWWeit / self.cWWeit)
+            punkte = ((math.sqrt(wert) - self.aWWeit) / self.cWWeit)
             
         if punkte < 0:
             punkte = 0
