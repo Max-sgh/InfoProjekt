@@ -7,13 +7,13 @@ zeiger = verbindung.cursor()
 
 #app = Flask(__name__, static_folder="static")
 
-schueler=sqlite3.connect('Schuelernummer','Jahrgang','Klasse','Geschlecht'. 'Name','Vorname', 'Geburtsdatum')
-zeiger.execute("CREATE TABLE schueler (Schuelernummer,Jahrgang,Klasse,Geschlecht VARCHAR(), ,Name VARCHAR(),Vorname VARCHAR(), Geburtsdatum DATE")
+sportfest=sqlite3.connect(sportfest.db)
+zeiger.execute()
+sportfest.commit()
 
-werte=sqlite3.connect("ID","StationsNr","SchülerNr","DisziplinID")
-station=sqlite3.connect("StationNr","Lehrer","DisziplinID")
-classes=sqlite3.connect("Name","Unterteilung m/w","Klassenstufe")
-disziplin=sqlite3.connect("DisziplinID","Name","Klassenstufe")
+
+
+sportfest.close()
 
 
 
