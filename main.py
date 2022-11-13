@@ -596,6 +596,15 @@ def get_current_settings():
     ret = _adAdminUser + ";" + _adServer + ";" + _cnAdminGruppe + ";" + _cnUserGruppe + ";" + _adBaseDN
     return ret
 
+@app.route('/settings/changeGeneral', methods=["POST"])
+def change_general_settings():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        # Einstellung übernehmen und LDAP Verbindung prüfen
+        return "success"
+
+
 @app.route('/settings/deleteAllData')
 def method_name():
     if not checkAdmin():
