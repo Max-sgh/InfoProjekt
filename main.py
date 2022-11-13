@@ -16,11 +16,12 @@ app.secret_key = "Göröp"
 
 #Einstellungen
 _cnAdminGruppe = "Sportfest"
+_cnUserGruppe = "Lehrer"
 _adBaseDN = "DC=srv-lange,DC=de"
+_domainName = "srv-lange.de"
 _adServer = "192.168.178.54"
 _adAdminUser = "Administrator@srv-lange.de"
 _adPasswort = "Rsu3sc123"
-_domainName = "srv-lange.de"
 
 #ldap = ldapUtils("DC=srv-lange,DC=de", "192.168.178.54", "Administrator@srv-lange.de", "Rsu3sc123")
 _ldapU = ldapUtils(_adBaseDN, _adServer, _adAdminUser, _adPasswort)
@@ -32,7 +33,7 @@ _ldapU = ldapUtils(_adBaseDN, _adServer, _adAdminUser, _adPasswort)
 #    print("Yeah")
 #else: 
 #    print("Neay")
-#_ldapU.getAllGroupMembers("Sportfest") #['lehrer2', 'lehrer1']
+#print(_ldapU.getAllGroupMembers("Sportfest")) #['lehrer2', 'lehrer1']
 
 def checkLogin() -> bool:
     if not "user" in session:
@@ -118,9 +119,9 @@ def login():
             session["admin"] = True
         else:
             conn, success = _ldapU.authenticate(user + "@" + _domainName, password)
-            if success and _ldapU.checkGroup(user, "Lehrer"):
+            if success and _ldapU.checkGroup(user, _cnUserGruppe):
                 session["user"] = user
-                if _ldapU.checkGroup(user, "Sportfest"):
+                if _ldapU.checkGroup(user, _cnAdminGruppe):
                     session["admin"] = True
                 else:
                     session["admin"] = False
@@ -309,7 +310,7 @@ def getdiscipline():
         return "error"
     else:
         # bei keinen vorhanden Disziplinen "" zurückgeben
-        data = "sprint,50,h;laufen,1000;kugelstoss;schleuderball;ballwurf,200"
+        data = "sprint,50,h;laufen,800/1000;kugelstoss;schleuderball;ballwurf,200"
         return data
 
 @app.route('/settings/gradelevel/removediscipline')
@@ -358,6 +359,35 @@ def adddiscipline():
             print("Andere Disziplin - " + discipline)
         return "success"
 
+@app.route('/settings/gradelevel/deleteClass')
+def delete_class_gradelevel():
+    if not checkAdmin():
+        return "error"
+
+    if request.args.get('class') == None:
+        return "error"
+    else:
+        # Klasse löschen, allen Schüler der Klasse keine eintragen
+        return "success"
+
+@app.route('/settings/gradelevel/getClasses')
+def get_classes_gradelevel():
+    if not checkAdmin():
+        return "error"
+
+    return "5;5a,10;5b,20;5b,9;5c,8;5d,30\n6;6a,20;6b,30;6c,5;6d,65\n7;7a,76;7b,2;7c,1\n8;8a,5;8b,87;8c,9\n9\n10\nNone;None,8"
+
+@app.route('/settings/gradelevel/addClass', methods=["POST"])
+def add_class_gradelevel():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        gradelevel = request.form["gradelevel"]
+        klasse = request.form["class"]
+        print("Neue Klasse in #" + gradelevel + ": " + klasse)
+        return "success"
+
+
 @app.route('/class/addvalue')
 def addValue():
     if not checkLogin():
@@ -398,7 +428,7 @@ def getMeasurements():
         #
         # Daten im TSV Format - letzter Buchstabe muss \n sein.
         #
-        ret = "sprint50\t12,5\t512\nlaufen1000\t5,25\t300\nkugelstoss\t6,5\t520\n"
+        ret = "sprint50\t12,5\t512\nlaufen800/1000\t5,25\t300\nkugelstoss\t6,5\t520\n"
         return ret
 
 @app.route('/student/changemeasurements', methods=["POST"])
@@ -541,6 +571,37 @@ def isAdmin():
         return "true"
     else:
         return "false"
+
+@app.route('/students/upload', methods=["POST"])
+def upload_students():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        if 'csv-file' not in request.files:
+            return "error"
+        file = request.files["csv-file"]
+        if file.filename == "":
+            return "error"
+        if file:
+            csv = file.read().decode('utf-8')
+            print(csv)
+        else: 
+            return "error"
+        return "success"
+
+@app.route('/settings/getCurrent')
+def get_current_settings():
+    if not checkAdmin():
+        return "error"
+    ret = _adAdminUser + ";" + _adServer + ";" + _cnAdminGruppe + ";" + _cnUserGruppe + ";" + _adBaseDN
+    return ret
+
+@app.route('/settings/deleteAllData')
+def method_name():
+    if not checkAdmin():
+        return "error"
+    else:
+        return "success"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

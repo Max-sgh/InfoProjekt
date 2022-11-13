@@ -6,6 +6,12 @@
     _klassenstufen = ["5", "6", "7", "8", "9", "10"];
     _aktuelleKlassenstufe = 0;
     _klassen = [[["5a", 20], ["5b", 30], ["5c", 10]], [["6a", 10], ["6b", 20]], [["7a", 10], ["7b", 50], ["7c", 2]], [], [], []];
+    _mode = "";
+    _adUsername = "";
+    _adServer = "";
+    _adBaseDN = "";
+    _cnAdminGruppe = "";
+    _cnUserGruppe = "";
 </script>
 <style>
     .clickable {
@@ -32,22 +38,45 @@
 </template>
 <template id="general">
     <div class="w-50">
-        <h3 style="text-decoration: underline;">LDAP Einstellungen</h3>
+        <h3 style="text-decoration: underline;">LDAP Einstellungen:</h3>
         <form method="post">
             <div class="mb-3">
-                <label for="serverAddressInp" class="form-label">LDAP Server</label>
+                <label for="serverAddressInp" class="form-label">LDAP Server:</label>
                 <input type="text" class="form-control" id="serverAddressInp">
             </div>
             <div class="mb-3">
-                <label for="serverUsernameInp" class="form-label">LDAP Nutzer</label>
+                <label for="serverUsernameInp" class="form-label">LDAP Administrator ("Name des Kontos"@"Domäne"["user@example.local"]):</label>
                 <input type="text" class="form-control" id="serverUsernameInp">
             </div>
+            <div class="mb-3">
+                <label for="serverPassInp" class="form-label">LDAP Administrator-Passwort:</label>
+                <input type="password" class="form-control" id="serverPassInp">
+            </div>
+            <div class="mb-3">
+                <label for="admingroupInp" class="form-label">Name der Administratorgruppe:</label>
+                <input type="text" class="form-control" id="admingroupInp">
+            </div>
+            <div class="mb-3">
+                <label for="usergroupInp" class="form-label">Name der Nutzergruppe:</label>
+                <input type="text" class="form-control" id="usergroupInp">
+            </div>
+
             <button type="button" class="btn btn-primary btn-lg float-end">Speichern</button>
         </form>
         <br>
         <br>
+        <h3 style="text-decoration: underline;">Nutzer Upload</h3>
+        <form method="post" action="/students/upload" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="fileUpload" class="form-label">CSV-Datei hochladen:</label>
+                <input type="file" class="form-control" id="fileUpload" name="csv-file" accept=".csv,.txt" required>
+            </div>
+            <button type="button" class="btn btn-primary btn-lg float-end" onclick="uploadFile()">Hochladen</button>
+        </form>
+        <br>
+        <br>
         <h3 style="text-decoration: underline;">Alle Daten löschen</h3>
-        <button type="button" , class="btn btn-danger btn-lg float-end">Alles löschen</button>
+        <button type="button" class="btn btn-danger btn-lg" style="width: 100%;" onclick="deleteAll()">Alles löschen</button>
     </div>
 </template>
 <template id="class">
@@ -74,6 +103,10 @@
                 <tbody id="tblKlassen">
                 </tbody>
             </table>
+            <div class="d-flex flex-row-reverse">
+                <button type="button" onclick="createModal('klasse')" class="btn btn-lg btn-dark flex-row-reverse"
+                    style="width: 30%;" data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
+            </div>
         </div>
     </div>
 </template>
@@ -107,8 +140,8 @@
         </tbody>
     </table>
     <div class="d-flex flex-row-reverse">
-        <button type="button" onclick="createModal()" class="btn btn-lg btn-dark flex-row-reverse" style="width: 15%;"
-            data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
+        <button type="button" onclick="createModal('station')" class="btn btn-lg btn-dark flex-row-reverse"
+            style="width: 15%;" data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
     </div>
 </template>
 
@@ -117,31 +150,10 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLabel">Schüler hinzufügen</h1>
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Station hinzufügen</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="modal-body">
-                <label for="inpName" class="form-label">Name:</label>
-                <input type="text" class="form-control" id="inpName" value="">
-                <label for="selectDiscipline" class="form-label">Disziplin:</label>
-                <select class="form-select" id="selectDiscipline">
-                    <option value="sprint50">Sprint 50m</option>
-                    <option value="sprint75">Sprint 75m</option>
-                    <option value="sprint100">Sprint 100m</option>
-                    <option value="laufen800">Laufen 800m</option>
-                    <option value="laufen1000">Laufen 1000m</option>
-                    <option value="laufen2000">Laufen 2000m</option>,
-                    <option value="laufen3000">Laufen 3000m</option>
-                    <option value="hochsprung">Hochsprung</option>
-                    <option value="weitsprung">Weitsprung</option>
-                    <option value="kugelstoss">Kugelstoß</option>
-                    <option value="schleuderball">Schleuderball</option>
-                    <option value="ballwurf200">200g-Ballwurf</option>
-                    <option value="ballwurf80">80g-Schlagballwurf</option>
-                </select>
-                <label for="selectLehrer" class="form-label">Lehrer:</label>
-                <select class="form-select" id="selectLehrer">
-                </select>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
@@ -151,6 +163,34 @@
     </div>
 </div>
 
+<template id="modalStation">
+    <label for="inpName" class="form-label">Name:</label>
+    <input type="text" class="form-control" id="inpName" value="">
+    <label for="selectDiscipline" class="form-label">Disziplin:</label>
+    <select class="form-select" id="selectDiscipline">
+        <option value="sprint50">Sprint 50m</option>
+        <option value="sprint75">Sprint 75m</option>
+        <option value="sprint100">Sprint 100m</option>
+        <option value="laufen800/1000">Laufen 800m/1000m</option>
+        <option value="laufen2000">Laufen 2000m</option>,
+        <option value="laufen3000">Laufen 3000m</option>
+        <option value="hochsprung">Hochsprung</option>
+        <option value="weitsprung">Weitsprung</option>
+        <option value="kugelstoss">Kugelstoß</option>
+        <option value="schleuderball">Schleuderball</option>
+        <option value="ballwurf200">200g-Ballwurf</option>
+        <option value="ballwurf80">80g-Schlagballwurf</option>
+    </select>
+    <label for="selectLehrer" class="form-label">Lehrer:</label>
+    <select class="form-select" id="selectLehresubmitr">
+    </select>
+</template>
+
+<template id="modalKlasse">
+    <label for="inpNameKlasse" class="form-label">Klassenname:</label>
+    <input type="text" class="form-control" id="inpNameKlasse" value="">
+</template>
+
 <script>
     var _section = "{{ section }}";
     if (_section == "None") {
@@ -159,6 +199,8 @@
     } else if (_section == "general") {
         document.getElementById("content").innerHTML = document.getElementById("general").innerHTML;
         document.getElementById("heading").innerHTML = "Allgemeine Einstellungen";
+        getCurrentSettings();
+        changeSettingsUI();
     } else if (_section == "class") {
         document.getElementById("content").innerHTML = document.getElementById("class").innerHTML;
         document.getElementById("heading").innerHTML = "Klassen verwalten";
@@ -171,8 +213,14 @@
         window.location.href = "/settings/station?id=" + id;
     }
 
-    function createModal() {
-        lehrerVerfügbar = [];
+    function changeSettingsUI() {
+        document.getElementById("serverAddressInp").value = _adServer;
+        document.getElementById("serverUsernameInp").value = _adUsername;
+        document.getElementById("admingroupInp").value = _cnAdminGruppe;
+        document.getElementById("usergroupInp").value = _cnUserGruppe;
+    }
+
+    function getCurrentSettings() {
         xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
@@ -180,45 +228,123 @@
                 if (response == "error") {
                     document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
                 } else {
-                    lines = response.split("\n");
-                    for (i = 0; i < lines.length; i++) {
-                        if (lines[i] == "")
-                            continue;
-                        // WaG;Torsten Wagner\n
-                        lehrer = [lines[i].split(";")[0], lines[i].split(";")[1]];
-                        lehrerVerfügbar.push(lehrer);
+                    //_adAdminUser + ";" + _adServer + ";" + _cnAdminGruppe + ";" + _cnUserGruppe + ";" + _adBaseDN
+                    console.log(response);
+                    settings = response.split(";");
+                    console.log(settings);
+                    _adUsername = settings[0];
+                    _adBaseDN = settings[4];
+                    _adServer = settings[1];
+                    _cnAdminGruppe = settings[2];
+                    _cnUserGruppe = settings[3];
+                }
+            }
+        }
+        xhr.open("GET", "/settings/getCurrent", false);
+        xhr.send();
+    }
+
+    function uploadFile() {
+        document.getElementById("LoadingAnimation").style = "visibility: visible";
+        file = document.getElementById("fileUpload").files[0];
+        console.log(file);
+        formdata = new FormData();
+        formdata.append("csv-file", file, file.name);
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-success alert-dismissible fade show" role="alert">Datei erfolgreich hochgeladen und verarbeitet.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                    document.getElementById("fileUpload").value = "";
+                }
+                document.getElementById("LoadingAnimation").style = "visibility: hidden";
+            }
+        }
+        xhr.open("POST", "/students/upload", true);
+        xhr.send(formdata);
+    }
+
+    function createModal(mode) {
+        if (mode == "station") {
+            _mode = mode;
+            lehrerVerfügbar = [];
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        lines = response.split("\n");
+                        for (i = 0; i < lines.length; i++) {
+                            if (lines[i] == "")
+                                continue;
+                            // WaG;Torsten Wagner\n
+                            lehrer = [lines[i].split(";")[0], lines[i].split(";")[1]];
+                            lehrerVerfügbar.push(lehrer);
+                        }
                     }
                 }
             }
-        }
-        xhr.open("GET", "/station/getTeacher?id=-1", false);
-        xhr.send();
+            xhr.open("GET", "/station/getTeacher?id=-1", false);
+            xhr.send();
 
-        html = "";
-        for (i = 0; i < lehrerVerfügbar.length; i++) {
-            html += '<option value="' + lehrerVerfügbar[i][0] + '">' + lehrerVerfügbar[i][1] + '</option>'
+            html = "";
+            for (i = 0; i < lehrerVerfügbar.length; i++) {
+                html += '<option value="' + lehrerVerfügbar[i][0] + '">' + lehrerVerfügbar[i][1] + '</option>'
+            }
+            document.getElementById("modal-body").innerHTML = document.getElementById("modalStation").innerHTML;
+            document.getElementById("selectLehrer").innerHTML = html;
+            document.getElementById("staticBackdropLabel").innerText = "Station hinzufügen";
+        } else if (mode == "klasse") {
+            _mode = mode;
+            document.getElementById("modal-body").innerHTML = document.getElementById("modalKlasse").innerHTML;
+            document.getElementById("staticBackdropLabel").innerText = "Klasse hinzufügen";
+
         }
-        document.getElementById("selectLehrer").innerHTML = html;
     }
 
     function save() {
-        document.getElementById("LoadingAnimation").style = "visibility: visible";
-        xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                response = xhr.responseText;
-                if (response == "error") {
-                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
-                } else {
-                    window.location.href = "/settings?section=stations"
+        if (_mode == "station") {
+            document.getElementById("LoadingAnimation").style = "visibility: visible";
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        window.location.href = "/settings?section=stations"
+                    }
+                    document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                    $('#staticBackdrop').modal('hide');
                 }
-                document.getElementById("LoadingAnimation").style = "visibility: hidden";
-                $('#staticBackdrop').modal('hide');
             }
+            xhr.open("POST", "/station/addStation", true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send("name=" + document.getElementById("inpName").value + "&discipline=" + document.getElementById("selectDiscipline").value + "&teacher=" + document.getElementById("selectLehrer").value);
+        } else if (_mode == "klasse") {
+            document.getElementById("LoadingAnimation").style = "visibility: visible";
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        window.location.href = "/settings?section=class"
+                    }
+                    document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                    $('#staticBackdrop').modal('hide');
+                }
+            }
+            xhr.open("POST", "/settings/gradelevel/addClass", true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send("gradelevel=" + _klassenstufen[_aktuelleKlassenstufe] + "&class=" + document.getElementById("inpNameKlasse").value);
         }
-        xhr.open("POST", "/station/addStation", true);
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-        xhr.send("name=" + document.getElementById("inpName").value + "&discipline=" + document.getElementById("selectDiscipline").value + "&teacher=" + document.getElementById("selectLehrer").value);
     }
 
     function redirect(to) {
@@ -248,7 +374,12 @@
         tblKlassenstufen = document.getElementById("tblKlassenstufen");
         html = "";
         for (i = 0; i < _klassenstufen.length; i++) {
-            html += "<tr onclick='clickKlassenstufe(" + i + ")'><td>" + _klassenstufen[i] + "</td><td style='text-align: right;'><i class='fa-solid fa-gear clickable' onclick='aenderKlassenstufe(" + i + ")'></i></td></tr>"
+            text = _klassenstufen[i];
+            if (text == "None") {
+                text = "Nicht zugewiesen";
+                html += "<tr onclick='clickKlassenstufe(" + i + ")'><td>" + text + "</td><td style='text-align: right;'></td></tr>"
+            } else
+                html += "<tr onclick='clickKlassenstufe(" + i + ")'><td>" + text + "</td><td style='text-align: right;'><i class='fa-solid fa-gear clickable' onclick='aenderKlassenstufe(" + i + ")'></i></td></tr>"
         }
         tblKlassenstufen.innerHTML = html;
     }
@@ -269,10 +400,86 @@
         html = "";
         klassen = _klassen[_aktuelleKlassenstufe];
         for (i = 0; i < klassen.length; i++) {
-            html += '<tr class="clickable" onclick="aenderKlasse(' + i + ')"><td>' + klassen[i][0] + '</td><td>' + klassen[i][1] + '</td><td style="text-align: right;"></td></tr>'
+            text = klassen[i][0];
+            if (text == "None") {
+                text = "Nicht zugewiesen"
+                html += '<tr><td class="clickable" onclick="aenderKlasse(' + i + ')">' + text + '</td><td class="clickable" onclick="aenderKlasse(' + i + ')">' + klassen[i][1] + '</td><td style="text-align: right;"></td></tr>'
+            } else
+                html += '<tr><td class="clickable" onclick="aenderKlasse(' + i + ')">' + text + '</td><td class="clickable" onclick="aenderKlasse(' + i + ')">' + klassen[i][1] + '</td><td style="text-align: right;"><i class="fa-solid fa-trash-can clickable" onclick="deleteClass(' + i + ')"></td></tr>'
         }
         tblKlassen.innerHTML = html;
     }
+
+    function getClasses() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split("\n");
+                    _klassenstufen = [];
+                    _klassen = [];
+                    for (i = 0; i < lines.length; i++) {
+                        l = lines[i].split(";");
+                        gradelevel = l[0];
+                        classes = [];
+                        for (j = 1; j < l.length; j++) {
+                            k = l[j].split(",");
+                            classes.push([k[0], k[1]]);
+                        }
+                        _klassenstufen.push(gradelevel);
+                        _klassen.push(classes);
+                    }
+                }
+            }
+        }
+        xhr.open("GET", "/settings/gradelevel/getClasses", false);
+        xhr.send();
+    }
+
+    function deleteClass(klasse) {
+        if (confirm("Sind Sie sicher, dass Sie diese Klasse löschen möchten? Alle Schüler dieser Klasse werden aus der Klasse entfernt, jedoch nicht gelöscht!")) {
+            klasse = _klassen[_aktuelleKlassenstufe][klasse][0];
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        getClasses();
+                    }
+                }
+            }
+            xhr.open("GET", "/settings/gradeLevel/deleteClass?class=" + klasse, false);
+            xhr.send();
+        }
+    }
+
+    function deleteAll() {
+        if (confirm("Sind Sie sicher, dass Sie alle Schüler, Werte, Klassen und Stationen löschen möchten?")) {
+            if (confirm("Sind Sie sich ganz sicher?")) {
+                xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        response = xhr.responseText;
+                        if (response == "error") {
+                            document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                        } else {
+                            window.location.href = "/logout";
+                        }
+                    }
+                }
+                xhr.open("GET", "/settings/deleteAllData", false);
+                xhr.send();
+            }
+        }
+
+    }
+
+    getClasses();
     klassenstufentabelleErstellen();
     klassentabelleErstellen();
 </script>

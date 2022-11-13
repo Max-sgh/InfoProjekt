@@ -97,6 +97,9 @@
 </div>
 
 <script>
+    if (_klasse == "None") {
+        document.getElementById("heading").innerText = "Nicht zugewiesene Schüler";
+    }
     function getSchueler(klasse) {
         xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
@@ -229,7 +232,10 @@
         html = "";
         for (i = 0; i < _schuelerKlasse.length; i++) {
             schueler = _schuelerKlasse[i];
-            html += '<tr><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[0] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[1] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[2] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[3] + '</td><td style="text-align:right;"><i class="fa-solid fa-trash-can clickable" onclick="entferneSchueler(' + schueler[0] + ')"></i></td></tr>'
+            if (_klasse != "None")
+                html += '<tr><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[0] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[1] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[2] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[3] + '</td><td style="text-align:right;"><i class="fa-solid fa-trash-can clickable" onclick="entferneSchueler(' + schueler[0] + ')"></i></td></tr>'
+            else
+                html += '<tr><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[0] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[1] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[2] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[3] + '</td><td style="text-align:right;"></td></tr>'
         }
         tbody.innerHTML = html;
     }

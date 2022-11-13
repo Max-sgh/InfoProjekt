@@ -99,8 +99,7 @@
 </template>
 <template id="templateLaufen">
     <select id="modalSelectLaufen" class="form-select" style="margin-top: 10px;">
-        <option>800m</option>
-        <option>1000m</option>
+        <option>800m/1000m</option>
         <option>2000m</option>
         <option>3000m</option>
     </select>
@@ -173,8 +172,8 @@
             data = _klassenstufe + ",sprint," + distanz + "," + messung;
         } else if (disziplin == "Laufen") {
             distanz = document.getElementById("modalSelectLaufen").value;
-            if (diszanz == "800m")
-                distanz = "800m";
+            if (diszanz == "800m/1000m")
+                distanz = "800/1000";
             else if (distanz == "1000m")
                 distanz = "1000";
             else if (distanz == "2000m")
@@ -253,8 +252,8 @@
                 html += "<tr><td>Sprint</td><td>" + distanz + "</td><td>" + messung + "</td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             } else if (disziplin == "laufen") {
                 distanz = disziplinen[i].split(",")[1];
-                if (distanz == "800")
-                    distanz = "800m"
+                if (distanz == "800/1000")
+                    distanz = "800m/1000m"
                 else if (distanz == "1000")
                     distanz = "1000m";
                 else if (distanz == "2000")

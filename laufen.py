@@ -5,8 +5,6 @@ class Laufen(Disziplin):
     def __init__(self):
         self.aW800 = 2.02320
         self.cW800 = 0.00647
-        self.aW1000 = 2.02320
-        self.cW1000 = 0.00647
         self.aW2000 = 1.80000
         self.cW2000 = 0.00540
         self.aW3000 = 1.75000
@@ -32,9 +30,9 @@ class Laufen(Disziplin):
                 punkte = ((distanz / (wert+self._zuschlag)) - self.aW800) / self.cW800
 
             if geschlecht == 'm' and distanz == 1000:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aM1000) / self.cM1000
+                punkte = ((distanz / (wert)) - self.aM1000) / self.cM1000
             if geschlecht == 'w' and distanz == 1000:
-                punkte = ((distanz / (wert+self._zuschlag)) - self.aW1000) / self.cW1000
+                punkte = ((distanz / (wert)) - self.aW1000) / self.cW1000
 
             if geschlecht == 'm' and distanz == 2000:
                 punkte = ((distanz / (wert+self._zuschlag)) - self.aM2000) / self.cM2000
@@ -49,13 +47,11 @@ class Laufen(Disziplin):
         if messung == 'e':
             if geschlecht == 'm' and distanz == 800:
                 punkte = ((distanz / (wert)) - self.aM800) / self.cM800
-            if geschlecht == 'w' and distanz == 50:
+            if geschlecht == 'w' and distanz == 800:
                 punkte = ((distanz / (wert)) - self.aW800) / self.cW800
 
             if geschlecht == 'm' and distanz == 1000:
                 punkte = ((distanz / (wert)) - self.aM1000) / self.cM1000
-            if geschlecht == 'w' and distanz == 1000:
-                punkte = ((distanz / (wert)) - self.aW1000) / self.cW1000
 
             if geschlecht == 'm' and distanz == 2000:
                 punkte = ((distanz / (wert)) - self.aM2000) / self.cM2000
