@@ -180,6 +180,7 @@
             <form action="#" method="post">
                 <input type="text" id="login" class="fadeIn second" name="username" placeholder="Benutzername">
                 <input type="password" id="password" class="fadeIn third" name="password" placeholder="Passwort">
+                <p style="color:red; font-style: italic; visibility: hidden;" id="errorText">Benutzername oder Passwort falsch!</p>
                 <input type="submit" class="fadeIn fourth" value="Log In">
             </form>
         </div>
@@ -191,4 +192,10 @@
         integrity="sha384-7VPbUDkoPSGFnVtYi0QogXtr74QeVeeIs99Qfg5YCF+TidwNdjvaKZX19NZ/e6oz"
         crossorigin="anonymous"></script>
 </body>
+<script>
+    _error = "{{error}}" == "True" ? true : false;
+    if (_error) {
+        document.getElementById("errorText").style = "color:red; font-style: italic; visibility: visible;";
+    }
+</script>
 </html>

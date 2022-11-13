@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+{% block title %} Station bearbeiten {% endblock %}
+
+{% block header%}
+<style>
+    .clickable {
+        cursor: pointer;
+    }
+
+    .fa-solid {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+</style>
+<script>
+    _stationID = parseInt("{{stationID}}");
+    _name = "";
+    _disziplin = "";
+    _disziplinAnzeige = "";
+    _lehrer = "";
+    _lehrerKürzel = "";
+    _klassen = [];
+    _lehrerVerfügbar = [];
+    _mode = "";
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Wurf 1</h1>
+    <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
+</div>
+<div id="alertPlaceholder"></div>
+<div id="content" style="margin-left: 20px;">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <p><b>Daten:</b></p>
+                    <p id="lblName"></p>
+                    <p id="lblDisziplin"></p>
+                    <p id="lblLehrer"></p>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" style="margin-right: 2px;" role="button"
+                            onclick="btnChangeStationClicked()" data-bs-toggle="modal"
+                            data-bs-target="#staticBackdrop">Daten ändern</button>
+                        <button class="btn btn-danger" role="button" onclick="btnDeleteClicked()">Station
+                            löschen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <p><b>Zugewiesene Klassen:</b></p>
+                    <table class="table table-striped table-condensed col-md-6 table-responsive">
+                        <thead class="bg-dark" style="color: white;">
+                            <tr>
+                                <td>Klasse</td>
+                                <td colspan="2">Status</td>
+                            </tr>
+                        </thead>
+                        <tbody id="tblKlassen">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel"></h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-primary" onclick="save()">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="modalData">
+    <label for="inpName" class="form-label">Name:</label>
+    <input type="text" class="form-control" id="inpName" value="">
+    <label for="selectLehrer" class="form-label">Lehrer:</label>
+    <select class="form-select" id="selectLehrer">
+    </select>
+</template>
+
+<template id="modalKlasse">
+    <label for="selectKlasse" class="form-label">Klasse auswählen:</label>
+    <select class="form-select" id="selectKlasse">
+    </select>
+</template>
+
+<script>
+    document.getElementById("LoadingAnimation").style = "visibility: visible";
+    function getStationDetails() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    _name = response.split("\n")[0];
+                    _disziplin = response.split("\n")[1];
+                    _lehrerKürzel = response.split("\n")[2];
+                    _lehrer = response.split("\n")[3];
+                    switch (_disziplin) {
+                        case "sprint50":
+                            _disziplinAnzeige = "Sprint 50m";
+                            break;
+                        case "sprint75":
+                            _disziplinAnzeige = "Sprint 75m";
+                            break;
+                        case "sprint100":
+                            _disziplinAnzeige = "Sprint 100m";
+                            break;
+                        case "laufen800":
+                            _disziplinAnzeige = "Laufen 800m";
+                            break;
+                        case "laufen1000":
+                            _disziplinAnzeige = "Laufen 1000m";
+                            break;
+                        case "laufen2000":
+                            _disziplinAnzeige = "Laufen 2000m";
+                            break;
+                        case "laufen3000":
+                            _disziplinAnzeige = "Laufen 3000m";
+                            break;
+                        case "hochsprung":
+                            _disziplinAnzeige = "Hochsprung";
+                            break;
+                        case "weitsprung":
+                            _disziplinAnzeige = "Weitsprung";
+                            break;
+                        case "kugelstoss":
+                            _disziplinAnzeige = "Kugelstoß";
+                            break;
+                        case "schleuderball":
+                            _disziplinAnzeige = "Schleuderball";
+                            break;
+                        case "ballwurf80":
+                            _disziplinAnzeige = "80g Schlagballwurf";
+                            break;
+                        case "ballwurf200":
+                            _disziplinAnzeige = "200g Ballwurf";
+                            break;
+                        default:
+                            _disziplinAnzeige = "Fehler!";
+                            break;
+
+                    }
+                }
+            }
+        }
+        xhr.open("GET", "/station/getDetails?id=" + _stationID, false);
+        xhr.send();
+    }
+    getStationDetails();
+
+    function reloadData() {
+        document.getElementById("lblName").innerText = "  Name: " + _name;
+        document.getElementById("lblDisziplin").innerText = "  Disziplin: " + _disziplinAnzeige;
+        document.getElementById("lblLehrer").innerText = "  Lehrer: " + _lehrer;
+        document.getElementById("heading").innerText = "Station " + _name;
+    }
+    reloadData();
+
+    function createTable() {
+        html = '';
+        for (i = 0; i < _klassen.length; i++) {
+            badge = _klassen[i][1] == "closed" ? '<h6><span class="badge text-bg-success">Abgeschlossen</span></h6>' : '<h6><span class="badge text-bg-secondary">Offen</span></h6>';
+            html += "<tr><td class='clickable' onclick='redirectClass(" + i + ")'>" + _klassen[i][0] + "</td><td>" + badge + "</td><td style='text-align: right;'><i class='fa-solid fa-trash clickable' onclick='deleteClass(" + i + ")'></td></tr>";
+        }
+        html += '<tr><td colspan="3" style="text-align: center;" class="clickable" onclick="addClass()"><i class="fa-sharp fa-solid fa-plus clickable" onclick="addClass()"></i></td></tr>'
+        document.getElementById("tblKlassen").innerHTML = html;
+    }
+
+    function redirectClass(i) {
+        window.location.href = "/settings/class?class=" + _klassen[i][0];
+    }
+
+    function btnDeleteClicked() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    window.location.href = "/settings?section=stations"
+                }
+            }
+        }
+        xhr.open("GET", "/station/deleteStation?id=" + _stationID, false);
+        xhr.send();
+    }
+
+    function btnChangeStationClicked() {
+        document.getElementById("modal-body").innerHTML = document.getElementById("modalData").innerHTML;
+        document.getElementById("staticBackdropLabel").innerText = "Daten bearbeiten";
+        getTeacher();
+        html = "";
+        index = 0;
+        for (i = 0; i < _lehrerVerfügbar.length; i++) {
+            html += '<option value="' + _lehrerVerfügbar[i][0] + '">' + _lehrerVerfügbar[i][1] + '</option>'
+            if (_lehrerVerfügbar[i][0] == _lehrerKürzel) {
+                index = i;
+            }
+        }
+        select = document.getElementById("selectLehrer");
+        select.innerHTML = html;
+        select.selectedIndex = index;
+        document.getElementById("inpName").value = _name;
+        _mode = "data";
+    }
+
+    function save() {
+        document.getElementById("LoadingAnimation").style = "visibility: visible";
+        if (_mode == "data") {
+            if (document.getElementById("inpName").value != _name || document.getElementById("selectLehrer").value != _lehrerKürzel) {
+                xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        response = xhr.responseText;
+                        if (response == "error") {
+                            document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                        } else {
+                            _name = document.getElementById("inpName").value;
+                            select = document.getElementById("selectLehrer");
+                            _lehrer = select.options[select.selectedIndex].text;
+                            _lehrerKürzel = select.value;
+                            reloadData();
+                        }
+                        document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                        $('#staticBackdrop').modal('hide');
+                    }
+                }
+                xhr.open("POST", "/station/changeData", true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.send("id=" + _stationID + "&name=" + document.getElementById("inpName").value + "&lehrer=" + document.getElementById("selectLehrer").value);
+            } else
+                $('#staticBackdrop').modal('hide');
+            document.getElementById("LoadingAnimation").style = "visibility: hidden";
+        } else if (_mode == "class") {
+            select = document.getElementById("selectKlasse");
+            klasse = select.value;
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        getClasses();
+                        createTable();
+                    }
+                    document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                    $('#staticBackdrop').modal('hide');
+                }
+            }
+            xhr.open("POST", "/station/addClass", true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send("id=" + _stationID + "&class=" + klasse);
+        } else {
+            $('#staticBackdrop').modal('hide');
+            document.getElementById("LoadingAnimation").style = "visibility: hidden";
+        }
+    }
+
+    function getClasses() {
+        _klassen = [];
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split("\n");
+                    for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue;
+                        klasse = [lines[i].split(";")[0], lines[i].split(";")[1]];
+                        _klassen.push(klasse);
+                    }
+                    createTable();
+                }
+            }
+        }
+        xhr.open("GET", "/station/getClasses?id=" + _stationID, false);
+        xhr.send();
+    }
+    getClasses();
+
+    function getTeacher() {
+        _lehrerVerfügbar = [];
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split("\n");
+                    for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue;
+                        // WaG;Torsten Wagner\n
+                        lehrer = [lines[i].split(";")[0], lines[i].split(";")[1]];
+                        _lehrerVerfügbar.push(lehrer);
+                    }
+                }
+            }
+        }
+        xhr.open("GET", "/station/getTeacher?id=" + _stationID, false);
+        xhr.send();
+    }
+
+    function addClass() {
+        document.getElementById("LoadingAnimation").style = "visibility: visible";
+        document.getElementById("modal-body").innerHTML = document.getElementById("modalKlasse").innerHTML;
+        document.getElementById("staticBackdropLabel").innerText = "Klasse hinzufügen";
+        klassen = []
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split("\n");
+                    html = "";
+                    for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue;
+                        klassen.push(lines[i]);
+                        html += '<option value="' + lines[i] + '">' + lines[i] + '</option>';
+                    }
+                    document.getElementById("selectKlasse").innerHTML = html;
+                    $('#staticBackdrop').modal('show');
+                    document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                    _mode = "class";
+                }
+            }
+        }
+        xhr.open("GET", "/station/getClasses?id=" + _stationID + "&discipline=" + _disziplin, false);
+        xhr.send();
+    }
+
+    function deleteClass(klasse) {
+        klasse = _klassen[klasse][0];
+        console.log(klasse);
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    getClasses();
+                    createTable();
+                }
+            }
+        }
+        xhr.open("GET", "/station/deleteClass?id=" + _stationID + "&class=" + klasse, false);
+        xhr.send();
+    }
+
+    function btnCloseClick() {
+        window.location.href = "/settings?section=stations";
+    }
+    document.getElementById("LoadingAnimation").style = "visibility: hidden;";
+</script>
+{% endblock %}

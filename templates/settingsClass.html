@@ -134,6 +134,7 @@
     }
 
     function entferneSchueler(id) {
+        console.log("Delete #" + id)
         xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
@@ -220,7 +221,7 @@
     }
 
     function clickBenutzer(schuelerNr) {
-        console.log("Benutzer #");
+        window.location.href = "/student?id=" + schuelerNr;
     }
 
     function erstelleTabelle() {
@@ -228,7 +229,7 @@
         html = "";
         for (i = 0; i < _schuelerKlasse.length; i++) {
             schueler = _schuelerKlasse[i];
-            html += '<tr class="clickable" onclick="clickBenutzer(' + schueler[0] + ')"><td>' + schueler[0] + '</td><td>' + schueler[1] + '</td><td>' + schueler[2] + '</td><td>' + schueler[3] + '</td><td style="text-align:right;"><i class="fa-solid fa-trash-can" onclick="entferneSchueler(' + schueler[0] + ')"></i></td></tr>'
+            html += '<tr><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[0] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[1] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[2] + '</td><td class="clickable" onclick="clickBenutzer(' + schueler[0] + ')">' + schueler[3] + '</td><td style="text-align:right;"><i class="fa-solid fa-trash-can clickable" onclick="entferneSchueler(' + schueler[0] + ')"></i></td></tr>'
         }
         tbody.innerHTML = html;
     }

@@ -2,8 +2,8 @@ import sys
 import ldap
 
 
-AD_SERVERS = ['172.20.0.2']
-AD_USER_BASEDN = "DC=gymsgh,DC=local"
+AD_SERVERS = ['192.168.178.54']
+AD_USER_BASEDN = "DC=srv-lange,DC=de"
 AD_USER_FILTER = '(&(objectClass=USER)(sAMAccountName={username}))'
 AD_USER_FILTER2 = '(&(objectClass=USER)(dn={userdn}))'
 AD_GROUP_FILTER = '(&(objectClass=GROUP)(cn={group_name}))'
@@ -72,30 +72,31 @@ def get_group_members(group_name, ad_conn, basedn=AD_USER_BASEDN):
 			for m in members_tmp:
 				#email = get_email_by_dn(m, ad_conn)
 				print(m)
-				res = ad_conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=USER)(sAMAccountName=WAG))")
-				print(res[0][1]["memberOf"])
+				#res = ad_conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=USER)(sAMAccountName=WAG))")
+				#rint(res[0][1]["memberOf"])
                 #
                 # Fehler: res[0][0]="None"
                 # Richtig: res[0][0]=dn
                 #
                 # Argumente in res[0][1]
                 #
-				print("\n")
+				#print("\n")
 				members.append(m)
 	return members
 
 
 if __name__ == "__main__":
   group_name = sys.argv[1]
-  ad_conn, result = ad_auth("15073@gymsgh.local", "Rsu3sc123")
-  print(ad_conn)
+  ad_conn, result = ad_auth("Administrator@srv-lange.de", "Rsu3sc123")
+  print(ad_conn),
+  get_group_members("Lehrer", ad_conn)
   #if result:
     #group_members = get_group_members("Lehrer", ad_conn)
     #for m in group_members:
       #print(m) # b'CN=Nurzum Test,CN=Users,DC=srv-lange,DC=de' \n [...]
 
 #(member=sAMAccountName=WAG,DC=gymsgh,DC=local)
-  res = ad_conn.search_s(AD_USER_BASEDN, ldap.SCOPE_SUBTREE, \
+  """res = ad_conn.search_s(AD_USER_BASEDN, ldap.SCOPE_SUBTREE, \
 	 "(&(objectClass=user)(sAMAccountName=WAG))")
   if res == "":
     print("No result")
@@ -112,4 +113,4 @@ if __name__ == "__main__":
                 print("Zugang gewährt")
             if g == "Sportfest":
                 print("Adminzugang")
-  #print(res)
+  #print(res)"""

@@ -1,7 +1,3 @@
-#from crypt import methods
-#from operator import truediv
-#from sched import scheduler
-#from tabnanny import check
 from urllib import request
 #import ldap
 from flask import Flask, redirect, url_for, render_template, send_from_directory, request, session
@@ -11,15 +7,32 @@ import sqlite3
 #'Schuelernummer','Jahrgang','Klasse','Geschlecht', Fahrschüler(unnötig),'Name','Vorname', 'Geburtsdatum'
 
 from sprint import Sprint
-#from ldapUtils import ldapUtils
+from ldapUtils import ldapUtils
 
 
 app = Flask(__name__, static_folder="static")
 # Sicherheitsschlüssel zur Verschlüsselung der Sessions setzen
 app.secret_key = "Göröp"
 
+#Einstellungen
+_cnAdminGruppe = "Sportfest"
+_adBaseDN = "DC=srv-lange,DC=de"
+_adServer = "192.168.178.54"
+_adAdminUser = "Administrator@srv-lange.de"
+_adPasswort = "Rsu3sc123"
+_domainName = "srv-lange.de"
+
 #ldap = ldapUtils("DC=srv-lange,DC=de", "192.168.178.54", "Administrator@srv-lange.de", "Rsu3sc123")
-#print(ldap.authenticate("test@srv-lange.de", "Rsu3sc123&"))
+_ldapU = ldapUtils(_adBaseDN, _adServer, _adAdminUser, _adPasswort)
+#conn, success = _ldapU.authenticate("test@srv-lange.de", "Rsu3sc123&")
+#conn.unbind()
+# return [cn, vorname, nachname, loginName, anzeigeName]
+#_ldapU.getUserDetail("lehrer1")
+#if _ldapU.checkGroup("lehrer1", "Sportfest"):
+#    print("Yeah")
+#else: 
+#    print("Neay")
+#_ldapU.getAllGroupMembers("Sportfest") #['lehrer2', 'lehrer1']
 
 def checkLogin() -> bool:
     if not "user" in session:
@@ -100,15 +113,23 @@ def login():
         #
 
         # Benutzername und Passwort prüfen; auf Administratorrechte im System prüfen
-        session["user"] = user
-        session["admin"] = False
+        if user == "admin" and password == "admin":
+            session["user"] = user
+            session["admin"] = True
+        else:
+            conn, success = _ldapU.authenticate(user + "@" + _domainName, password)
+            if success and _ldapU.checkGroup(user, "Lehrer"):
+                session["user"] = user
+                if _ldapU.checkGroup(user, "Sportfest"):
+                    session["admin"] = True
+                else:
+                    session["admin"] = False
+            else: 
+                return render_template("login.html", error=True)
 
         #Station von DB holen - bei keiner Zuteilung station="none"
         session["station"] = "Sprint 1"
         session["stationID"] = "sprint1" # ???
-
-        if user == "admin" and password == "admin":
-            session["admin"] = True
 
         return redirect(url_for("home"))
     else:
@@ -205,6 +226,19 @@ def settings_gradelevel():
         return redirect(url_for("home"))
     klassenstufe = request.args.get("id")
     return render_template("settingsGradeLevel.html", klassenstufe = klassenstufe)
+
+@app.route('/settings/station')
+def settings_station():
+    #
+    # Einstellungen für Station
+    #
+    if not checkAdmin():
+        return redirect(url_for("login"))
+
+    if request.args.get('id') == None:
+        return redirect(url_for("home"))
+    stationID = request.args.get("id")
+    return render_template("settingsStation.html", stationID = stationID)
 
 #
 # API Requests
@@ -399,6 +433,98 @@ def deleteStudent():
         # Schüler in Tabelle Schüler löschen 
         # Alle Werte von Schüler löschen
         #
+        return "success"
+
+@app.route('/station/getClasses')
+def get_classes():
+    if not checkAdmin():
+        return "error"
+
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        if request.args.get('discipline') == None:
+            # Alle Klassen der Station
+            return "10a;closed\n5b;open\n"
+        else:
+            # Alle Klassen mit Disziplin = discipline, die NICHT in Station sind
+            dicipline = request.args.get('discipline')
+            return "5b\n8a\n12c\n25a\n"
+
+@app.route('/station/getDetails')
+def get_details():
+    if not checkAdmin():
+        return "error"
+
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        return "Wurf 1\nballwurf200\nReD\nChristin Redlich"
+
+@app.route('/station/getTeacher')
+def add_class():
+    if not checkAdmin():
+        return "error"
+    
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        #
+        # Alle Lehrer ohne Station und Lehrer der Station zurück geben
+        #
+        return "WaG;Torsten Wagner\nBeM;Chris Bergmann\nReD;Christin Redlich\n"
+
+@app.route('/station/changeData', methods=["POST"])
+def change_data():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        lehrer = request.form["lehrer"]
+        name = request.form["name"]
+        stationID = request.form["id"]
+        return "success"
+
+@app.route('/station/addClass', methods=["POST"])
+def add_class_station():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        klasse = request.form["class"]
+        stationID = request.form["id"]
+        print(stationID + " -> " + klasse)
+        return "success"
+
+@app.route('/station/deleteClass')
+def delete_class_station():
+    if not checkAdmin():
+        return "error"
+    if request.args.get('id') == None or request.args.get('class') == None:
+        return "error"
+    else:
+        stationID = request.args.get('id')
+        klasse = request.args.get('class')
+        print("Delete: " + stationID + " -> " + klasse)
+        return "success"
+
+@app.route('/station/deleteStation')
+def delete_station():
+    if not checkAdmin():
+        return "error"
+
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        return "success"
+
+@app.route('/station/addStation', methods=["POST"])
+def add_station():
+    if not checkAdmin():
+        return "error"
+    if request.method == "POST":
+        name = request.form["name"]
+        discipline = request.form["discipline"]
+        teacher = request.form["teacher"]
+        print("Neue Station: " + name + " - " + discipline + " -> " + teacher)
         return "success"
 
 @app.route('/logout')

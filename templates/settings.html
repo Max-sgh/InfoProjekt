@@ -19,13 +19,16 @@
     <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Einstellungen</h1>
     <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
 </div>
+<div id="alertPlaceholder"></div>
 <div id="content" style="margin-left: 20px;">
-    
+
 </div>
 <template id="menu">
-    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)" id="general">Allgemeines  ></button>
-    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)" id="class">Klassen  ></button>
-    <button type="button" class="btn btn-dark btn-lg w-100" onclick="redirect(this)" id="stations">Stationen  ></button>
+    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)"
+        id="general">Allgemeines ></button>
+    <button type="button" class="btn btn-dark btn-lg w-100" style="margin-bottom: 2px;" onclick="redirect(this)"
+        id="class">Klassen ></button>
+    <button type="button" class="btn btn-dark btn-lg w-100" onclick="redirect(this)" id="stations">Stationen ></button>
 </template>
 <template id="general">
     <div class="w-50">
@@ -44,37 +47,109 @@
         <br>
         <br>
         <h3 style="text-decoration: underline;">Alle Daten löschen</h3>
-        <button type="button", class="btn btn-danger btn-lg float-end">Alles löschen</button>
+        <button type="button" , class="btn btn-danger btn-lg float-end">Alles löschen</button>
     </div>
 </template>
 <template id="class">
-        <div class="row">
-            <div class="col-md-6 table-responsive">
-                <table class="table table-striped table-condensed">
-                    <thead class="bg-dark" style="color: white;">
-                        <tr>
-                            <td>Klassenstufen</td>
-                            <td></td>
-                        </tr>
-                    </thead>
-                    <tbody id="tblKlassenstufen">
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-md-6 table-responsive">
-                <table class="table table-striped table-condensed col-md-6 table-responsive">
-                    <thead class="bg-dark" style="color: white;">
-                        <tr>
-                            <td colspan="3">Klassen</td>
-                        </tr>
-                    </thead>
-                    <tbody id="tblKlassen">
-                    </tbody>
-                </table>
-            </div>
+    <div class="row">
+        <div class="col-md-6 table-responsive">
+            <table class="table table-striped table-condensed">
+                <thead class="bg-dark" style="color: white;">
+                    <tr>
+                        <td>Klassenstufen</td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody id="tblKlassenstufen">
+                </tbody>
+            </table>
         </div>
+        <div class="col-md-6 table-responsive">
+            <table class="table table-striped table-condensed col-md-6 table-responsive">
+                <thead class="bg-dark" style="color: white;">
+                    <tr>
+                        <td colspan="3">Klassen</td>
+                    </tr>
+                </thead>
+                <tbody id="tblKlassen">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>
+<template id="stations">
+    <table class="table table-striped table-condensed">
+        <thead class="bg-dark" style="color: white">
+            <tr>
+                <td>Station</td>
+                <td>Disziplin</td>
+                <td>Lehrer</td>
+                <td>Status</td>
+            </tr>
+        </thead>
+        <tbody id="tbodyStationen">
+            <tr class="clickable" onclick="clickStation(1)">
+                <td>Sprint 1</td>
+                <td>Sprint 50m</td>
+                <td>ReD</td>
+                <td>
+                    <h6><span class="badge text-bg-success">Abgeschlossen</span></h6>
+                </td>
+            </tr>
+            <tr class="clickable" onclick="clickStation(2)">
+                <td>Wurf 1</td>
+                <td>Ballwurf 200g</td>
+                <td>PfR</td>
+                <td>
+                    <h6><span class="badge text-bg-secondary">Offen</span></h6>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="d-flex flex-row-reverse">
+        <button type="button" onclick="createModal()" class="btn btn-lg btn-dark flex-row-reverse" style="width: 15%;"
+            data-bs-toggle="modal" data-bs-target="#staticBackdrop"> + </button>
+    </div>
 </template>
 
+<div class="modal fade modal-xl" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Schüler hinzufügen</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <label for="inpName" class="form-label">Name:</label>
+                <input type="text" class="form-control" id="inpName" value="">
+                <label for="selectDiscipline" class="form-label">Disziplin:</label>
+                <select class="form-select" id="selectDiscipline">
+                    <option value="sprint50">Sprint 50m</option>
+                    <option value="sprint75">Sprint 75m</option>
+                    <option value="sprint100">Sprint 100m</option>
+                    <option value="laufen800">Laufen 800m</option>
+                    <option value="laufen1000">Laufen 1000m</option>
+                    <option value="laufen2000">Laufen 2000m</option>,
+                    <option value="laufen3000">Laufen 3000m</option>
+                    <option value="hochsprung">Hochsprung</option>
+                    <option value="weitsprung">Weitsprung</option>
+                    <option value="kugelstoss">Kugelstoß</option>
+                    <option value="schleuderball">Schleuderball</option>
+                    <option value="ballwurf200">200g-Ballwurf</option>
+                    <option value="ballwurf80">80g-Schlagballwurf</option>
+                </select>
+                <label for="selectLehrer" class="form-label">Lehrer:</label>
+                <select class="form-select" id="selectLehrer">
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-primary" onclick="save()">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     var _section = "{{ section }}";
@@ -87,7 +162,65 @@
     } else if (_section == "class") {
         document.getElementById("content").innerHTML = document.getElementById("class").innerHTML;
         document.getElementById("heading").innerHTML = "Klassen verwalten";
+    } else if (_section == "stations") {
+        document.getElementById("content").innerHTML = document.getElementById("stations").innerHTML;
+        document.getElementById("heading").innerHTML = "Stationen verwalten";
     }
+
+    function clickStation(id) {
+        window.location.href = "/settings/station?id=" + id;
+    }
+
+    function createModal() {
+        lehrerVerfügbar = [];
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    lines = response.split("\n");
+                    for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue;
+                        // WaG;Torsten Wagner\n
+                        lehrer = [lines[i].split(";")[0], lines[i].split(";")[1]];
+                        lehrerVerfügbar.push(lehrer);
+                    }
+                }
+            }
+        }
+        xhr.open("GET", "/station/getTeacher?id=-1", false);
+        xhr.send();
+
+        html = "";
+        for (i = 0; i < lehrerVerfügbar.length; i++) {
+            html += '<option value="' + lehrerVerfügbar[i][0] + '">' + lehrerVerfügbar[i][1] + '</option>'
+        }
+        document.getElementById("selectLehrer").innerHTML = html;
+    }
+
+    function save() {
+        document.getElementById("LoadingAnimation").style = "visibility: visible";
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    window.location.href = "/settings?section=stations"
+                }
+                document.getElementById("LoadingAnimation").style = "visibility: hidden";
+                $('#staticBackdrop').modal('hide');
+            }
+        }
+        xhr.open("POST", "/station/addStation", true);
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhr.send("name=" + document.getElementById("inpName").value + "&discipline=" + document.getElementById("selectDiscipline").value + "&teacher=" + document.getElementById("selectLehrer").value);
+    }
+
     function redirect(to) {
         if (to.id == "general") {
             window.location.href = "/settings?section=general";
@@ -110,7 +243,7 @@
         _aktuelleKlassenstufe = index;
         klassentabelleErstellen();
     }
-    
+
     function klassenstufentabelleErstellen() {
         tblKlassenstufen = document.getElementById("tblKlassenstufen");
         html = "";
@@ -124,7 +257,7 @@
         console.log("Ändere Klassenstufe #" + index);
         window.location.href = "/settings/gradelevel?id=" + index;
     }
-        
+
     function aenderKlasse(index) {
         console.log("Ändere Klasse #" + index);
         //window.location.replace("/settings/class?class=" + _klassen[_aktuelleKlassenstufe][index][0]);
