@@ -160,13 +160,12 @@
                     _schuelerVerfügbar = [];
                 } else
                     _schuelerVerfügbar = Array.from(jsonToArray(response));
+                    _aktuelleAuswahl = [];
+                    erstelleModalTabellen();
             }
         }
-        xhr.open("GET", "/settings/class/getstudents?klasse=none", true);
-        xhr.send();
-        _schuelerVerfügbar = Array.from(_schueler);
-        _aktuelleAuswahl = [];
-        erstelleModalTabellen();
+        xhr.open("GET", "/settings/class/getstudents?klasse=None", false);
+        xhr.send();        
     }
 
     function jsonToArray(json) {

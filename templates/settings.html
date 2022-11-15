@@ -39,13 +39,14 @@
 <template id="general">
     <div class="w-50">
         <h3 style="text-decoration: underline;">LDAP Einstellungen:</h3>
-        <form method="post" action="/settings/changeGeneral">
+        <form>
             <div class="mb-3">
                 <label for="serverAddressInp" class="form-label">LDAP Server:</label>
                 <input type="text" class="form-control" id="serverAddressInp">
             </div>
             <div class="mb-3">
-                <label for="serverUsernameInp" class="form-label">LDAP Administrator ("Name des Kontos"@"Domäne"["user@example.local"]):</label>
+                <label for="serverUsernameInp" class="form-label">LDAP Administrator ("Name des
+                    Kontos"@"Domäne"["user@example.local"]):</label>
                 <input type="text" class="form-control" id="serverUsernameInp">
             </div>
             <div class="mb-3">
@@ -61,7 +62,7 @@
                 <input type="text" class="form-control" id="usergroupInp">
             </div>
 
-            <button type="button" class="btn btn-primary btn-lg float-end">Speichern</button>
+            <button type="button" class="btn btn-primary btn-lg float-end" onclick="saveSettings()">Speichern</button>
         </form>
         <br>
         <br>
@@ -76,7 +77,8 @@
         <br>
         <br>
         <h3 style="text-decoration: underline;">Alle Daten löschen</h3>
-        <button type="button" class="btn btn-danger btn-lg" style="width: 100%;" onclick="deleteAll()">Alles löschen</button>
+        <button type="button" class="btn btn-danger btn-lg" style="width: 100%;" onclick="deleteAll()">Alles
+            löschen</button>
     </div>
 </template>
 <template id="class">
@@ -209,6 +211,35 @@
         document.getElementById("heading").innerHTML = "Stationen verwalten";
     }
 
+    function saveSettings() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    success = response.split(";")[0];
+                    errorText = response.split(";")[1];
+                    if (success == "success") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-success alert-dismissible fade show" role="alert">Einstellungen erfolgreich überprüft und übernommen.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                    } else {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger alert-dismissible fade show" role="alert">Fehler! Einstellungen konnten nicht erfolgreich übernommen werden und wurden nicht gespeichert. Fehlercode: ' + errorText + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+                    }
+                }
+            }
+        }
+        xhr.open("POST", "/settings/changeGeneral", true);
+        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        adUsername = document.getElementById("serverUsernameInp").value;
+        adServer = document.getElementById("serverAddressInp").value;
+        cnAdminGruppe = document.getElementById("admingroupInp").value;
+        cnUserGruppe = document.getElementById("usergroupInp").value;
+        adPasswort = document.getElementById("serverPassInp").value;
+        xhr.send("adUsername=" + adUsername + "&adPassword=" + adPasswort + "&adServer=" + adServer + "&cnAdminGroup=" + cnAdminGruppe + "&cnUserGroup=" + cnUserGruppe);
+
+    }
+
     function clickStation(id) {
         window.location.href = "/settings/station?id=" + id;
     }
@@ -303,7 +334,10 @@
             _mode = mode;
             document.getElementById("modal-body").innerHTML = document.getElementById("modalKlasse").innerHTML;
             document.getElementById("staticBackdropLabel").innerText = "Klasse hinzufügen";
-
+        } else if (mode == "settings") {
+            _mode = mode;
+            document.getElementById("modal-body").innerHTML = document.getElementById("modalCheckSettings").innerHTML;
+            document.getElementById("staticBackdropLabel").innerText = "Einstellungen überprüfen.";
         }
     }
 
@@ -385,8 +419,8 @@
     }
 
     function aenderKlassenstufe(index) {
-        console.log("Ändere Klassenstufe #" + index);
-        window.location.href = "/settings/gradelevel?id=" + index;
+        console.log("Ändere Klassenstufe #" + _klassenstufen[index]);
+        window.location.href = "/settings/gradelevel?id=" + _klassenstufen[index];
     }
 
     function aenderKlasse(index) {
@@ -450,10 +484,12 @@
                         document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
                     } else {
                         getClasses();
+                        klassenstufentabelleErstellen();
+                        klassentabelleErstellen();
                     }
                 }
             }
-            xhr.open("GET", "/settings/gradeLevel/deleteClass?class=" + klasse, false);
+            xhr.open("GET", "/settings/gradelevel/deleteClass?class=" + klasse, false);
             xhr.send();
         }
     }

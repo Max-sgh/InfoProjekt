@@ -1,5 +1,5 @@
 from urllib import request
-#import ldap
+import ldap
 from flask import Flask, redirect, url_for, render_template, send_from_directory, request, session
 from datetime import date
 import sqlite3
@@ -23,6 +23,7 @@ _adServer = "192.168.178.54"
 _adAdminUser = "Administrator@srv-lange.de"
 _adPasswort = "Rsu3sc123"
 
+
 #ldap = ldapUtils("DC=srv-lange,DC=de", "192.168.178.54", "Administrator@srv-lange.de", "Rsu3sc123")
 _ldapU = ldapUtils(_adBaseDN, _adServer, _adAdminUser, _adPasswort)
 #conn, success = _ldapU.authenticate("test@srv-lange.de", "Rsu3sc123&")
@@ -34,6 +35,12 @@ _ldapU = ldapUtils(_adBaseDN, _adServer, _adAdminUser, _adPasswort)
 #else: 
 #    print("Neay")
 #print(_ldapU.getAllGroupMembers("Sportfest")) #['lehrer2', 'lehrer1']
+
+def getDB():
+    dbCon = sqlite3.connect("sportfest.db")
+    dbCur = dbCon.cursor()
+    return dbCon, dbCur
+
 
 def checkLogin() -> bool:
     if not "user" in session:
@@ -258,13 +265,22 @@ def getUser():
         klasse = request.args.get('klasse')
         print("Get User of class " + str(klasse))
         students = ""
-        if klasse == "none":
+        #if klasse == "none":
             # Schüler ohne Klasse zurückgeben
-            students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}, {"schuelerNr":"6" , "firstname":"Eico" , "lastname":"Eillary" , "geschlecht":"u"}]}'
-        else:
+            #students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}, {"schuelerNr":"6" , "firstname":"Eico" , "lastname":"Eillary" , "geschlecht":"u"}]}'
+        #else:
             # Schüler einer bestimmte Klasse zurückgeben
-            students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}]}'
-        
+            #students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}]}'
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT SchuelerNr, Vorname, Name, Geschlecht FROM schueler WHERE klasse='" + klasse + "';").fetchall()
+        if len(results) == 0:
+            return '{"students": []}'
+        students = '{"students": ['
+        for res in results:
+            students += '{"schuelerNr":"' + str(res[0]) + '" , "firstname":"' + str(res[1]) + '" , "lastname":"' + str(res[2]) + '" , "geschlecht":"' + str(res[3]) + '"},'
+        students = students[:-1]
+        students += ']}'
+        dbCur.close()
         return students
 
 @app.route('/settings/class/addstudent')
@@ -281,6 +297,13 @@ def addUser():
         id = request.args.get('id')
         klasse = request.args.get('klasse')
         print("Add user #" + str(id) + " to Class " + str(klasse))
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("UPDATE schueler SET klasse='" + klasse + "' WHERE SchuelerNr=" + id)
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/settings/class/removestudent')
@@ -296,6 +319,13 @@ def removeUser():
     else: 
         id = request.args.get('id')
         print("Remove user #" + str(id))
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("UPDATE schueler SET klasse='None' WHERE SchuelerNr=" + id)
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/settings/gradelevel/getdisciplines')
@@ -310,7 +340,19 @@ def getdiscipline():
         return "error"
     else:
         # bei keinen vorhanden Disziplinen "" zurückgeben
-        data = "sprint,50,h;laufen,800/1000;kugelstoss;schleuderball;ballwurf,200"
+        klassenstufe = request.args.get('id')
+        data = ""
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT DisziplinID,Disziplin,Messung FROM disziplin WHERE Klassenstufe=" + klassenstufe).fetchall()
+        if len(results) == 0:
+            return ""
+        for r in results:
+            id = r[0]
+            disziplin = r[1]
+            messung = r[2]
+            data += disziplin + "," + messung + ";"
+        data = data[:-1]
+        #data = "sprint50,h;laufen800/1000;kugelstoss;schleuderball;ballwurf200"
         return data
 
 @app.route('/settings/gradelevel/removediscipline')
@@ -345,16 +387,16 @@ def adddiscipline():
         print("Add '" + data[1] + "' to Grade Level #" + data[0])
         gradelevel = data[0]
         discipline = data[1]
-        if discipline == "sprint":
-            distanz = data[2]
-            messung = data[3]
-            print("Sprint - " + distanz + "m " + messung)
-        elif discipline == "laufen":
-            distanz = data[2]
-            print("Laufen " + distanz + "m")
-        elif discipline == "ballwurf":
-            gewicht = data[2]
-            print("Ballwurf " + gewicht + "g")
+        if discipline == "sprint50" or discipline == "sprint75" or discipline == "sprint100":
+            #distanz = data[2]
+            messung = data[2]
+            print("Sprint - " + discipline +  " m " + messung)
+        elif discipline == "laufen800/1000" or discipline == "laufen2000" or discipline == "laufen3000":
+            #distanz = data[2]
+            print("Laufen - " + discipline)
+        elif discipline == "ballwurf80" or discipline == "ballwurf200":
+            #gewicht = data[2]
+            print("Ballwurf - " + discipline)
         else:
             print("Andere Disziplin - " + discipline)
         return "success"
@@ -363,11 +405,29 @@ def adddiscipline():
 def delete_class_gradelevel():
     if not checkAdmin():
         return "error"
-
+    print(1)
     if request.args.get('class') == None:
         return "error"
     else:
         # Klasse löschen, allen Schüler der Klasse keine eintragen
+        klasse = request.args.get('class')
+        print(1)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("DELETE FROM klasse WHERE Name='" + klasse + "'")
+            dbCon.commit()
+            print(1)
+
+            for schueler in dbCur.execute("SELECT SchuelerNr FROM schueler WHERE Klasse='" + klasse + "'").fetchall():
+                print(schueler[0])
+                dbCon, dbCur = getDB()
+                dbCur.execute("UPDATE schueler SET klasse='None' WHERE SchuelerNr=" + str(schueler[0]) + ";")
+                dbCon.commit()
+
+            dbCon.close()
+        except:
+            return "error"
+
         return "success"
 
 @app.route('/settings/gradelevel/getClasses')
@@ -375,7 +435,31 @@ def get_classes_gradelevel():
     if not checkAdmin():
         return "error"
 
-    return "5;5a,10;5b,20;5b,9;5c,8;5d,30\n6;6a,20;6b,30;6c,5;6d,65\n7;7a,76;7b,2;7c,1\n8;8a,5;8b,87;8c,9\n9\n10\nNone;None,8"
+    dbCon, dbCur = getDB()
+    res = dbCur.execute("SELECT Name, Klassenstufe FROM klasse;")
+    if res.fetchone() is None:
+        print("Error! No Classes")
+        return "None;None,0"
+    klassenstufen = [5,6,7,8,9,10]
+    klassen = [[],[],[],[],[],[]]
+    for f in dbCur.execute("SELECT Name, Klassenstufe FROM klasse;"):
+        klassenstufe = f[1]
+        klasse = f[0]
+        index = klassenstufen.index(klassenstufe)
+        klassen[index].append(klasse)
+    ret = ""
+    i = 0
+    for klasse in klassen:
+        ret += str(klassenstufen[i]) + ";"
+        for k in klasse:
+            ret += str(k) + "," + str(len(dbCur.execute("SELECT SchuelerNr FROM schueler WHERE klasse='" + k + "';").fetchall())) + ";"
+        ret = ret[:-1]
+        ret += "\n"
+        i += 1
+    ret += "None;None," + str(len(dbCur.execute("SELECT SchuelerNr FROM schueler WHERE klasse='None';").fetchall()))
+    dbCur.close()
+    #return "5;5a,10;5b,20;5b,9;5c,8;5d,30\n6;6a,20;6b,30;6c,5;6d,65\n7;7a,76;7b,2;7c,1\n8;8a,5;8b,87;8c,9\n9\n10\nNone;None,8"
+    return ret
 
 @app.route('/settings/gradelevel/addClass', methods=["POST"])
 def add_class_gradelevel():
@@ -385,6 +469,13 @@ def add_class_gradelevel():
         gradelevel = request.form["gradelevel"]
         klasse = request.form["class"]
         print("Neue Klasse in #" + gradelevel + ": " + klasse)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("INSERT INTO klasse (Name, Klassenstufe) VALUES ('" + klasse + "', " + gradelevel + ")")
+            dbCon.commit()
+            dbCon.close()
+        except: 
+            return "error"
         return "success"
 
 
@@ -599,11 +690,69 @@ def get_current_settings():
 @app.route('/settings/changeGeneral', methods=["POST"])
 def change_general_settings():
     if not checkAdmin():
-        return "error"
+        return "error;Permission denied"
     if request.method == "POST":
-        # Einstellung übernehmen und LDAP Verbindung prüfen
-        return "success"
+        if request.form["adUsername"] == None or request.form["adPassword"] == None or request.form["adServer"] == None \
+            or request.form["cnAdminGroup"] == None or request.form["cnUserGroup"] == None:
+            return "error;API-Request incomplete"
+        adUsername = request.form["adUsername"]
+        adPassword = request.form["adPassword"]
+        adServer = request.form["adServer"]
+        cnAdminGruppe = request.form["cnAdminGroup"]
+        cnUserGruppe = request.form["cnUserGroup"]
+        print(adUsername + " " + adPassword + " " + adServer + " " + cnAdminGruppe + " " + cnUserGruppe)
 
+        basedn = ""
+        try:
+            domain = adUsername.split("@")[1]
+        except:
+            return "error;Username does not include Domain name"
+
+        if domain == "":
+            return "error;Username does not include Domain name"
+        dn = domain.split(".")
+        for d in dn:
+            basedn += "DC=" + d + ","
+        basedn = basedn[:-1]
+        print(basedn)
+        try:
+            conn = ldap.initialize('ldap://' + adServer)
+            conn.protocol_version = 3
+            conn.set_option(ldap.OPT_REFERRALS, 0)
+        except:
+            print("Login-error")
+            return "error;Invalid Credentials"
+
+        try:
+            result = conn.simple_bind_s(adUsername, adPassword)
+        except ldap.INVALID_CREDENTIALS:
+            return "error;Permission on Server denied - Maybe wrong password or username"
+        except ldap.SERVER_DOWN:
+            return "error;Server down"
+        except ldap.LDAPError:
+            return "error;Other LDAP error"
+
+        try:
+            result = conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=GROUP)(cn=" + cnAdminGruppe + "))")
+        except:
+            return "error;Invalid Credentials"
+        if result:
+            if len(result[0]) >= 2 and 'member' in result[0][1]:
+                members_tmp = result[0][1]['member']
+                if len(members_tmp) == 0:
+                    return "error;No user in admingroup or wrong name"
+            else:
+                return "error;No user in admingroup or wrong name"
+
+        result = conn.search_s(basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=GROUP)(cn=" + cnUserGruppe + "))")
+        if result:
+            if len(result[0]) >= 2 and 'member' in result[0][1]:
+                members_tmp = result[0][1]['member']
+                if len(members_tmp) == 0:
+                    return "error;No user in usergroup or wrong name"
+            else:
+                return "error;No user in usergroup or wrong name"
+        return "success;"
 
 @app.route('/settings/deleteAllData')
 def method_name():

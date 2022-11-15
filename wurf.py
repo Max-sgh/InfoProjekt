@@ -42,7 +42,7 @@ class Werfen (Disziplin):
             punkte = ((math.sqrt(wert) - self.aM80) / self.cM80)
         if geschlecht == 'w' and art == "ballwurf80":
             punkte = ((math.sqrt(wert) - self.aW80) / self.cW80)
-            
+
         if punkte < 0:
             punkte = 0
             

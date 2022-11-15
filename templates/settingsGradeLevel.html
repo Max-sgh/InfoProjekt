@@ -16,7 +16,7 @@
     _klassenstufe = "{{klassenstufe}}";
     _disziplinen = "";
     _disziplinenVerfugbar = ["sprint", "laufen", "hochsprung", "weitsprung", "kugelstoss", "schleuderball", "ballwurf"];
-    _alledisziplinen = ["sprint", "laufen", "hochsprung", "weitsprung", "kugelstoss", "schleuderball", "ballwurf"]
+    _alledisziplinen = ["sprint", "laufen", "hochsprung", "weitsprung", "kugelstoss", "schleuderball", "ballwurf"];
 </script>
 {% endblock %}
 
@@ -118,6 +118,7 @@
         html = "<option>Bitte Disziplin auswählen</option>";
         for (i = 0; i < _disziplinenVerfugbar.length; i++) {
             disziplin = _disziplinenVerfugbar[i];
+            console.log(disziplin);
             if (disziplin == "sprint")
                 html += "<option>Sprint</option>";
             else if (disziplin == "laufen")
@@ -163,24 +164,22 @@
         } else if (disziplin == "Sprint") {
             distanz = document.getElementById("modalSelectSprint").value;
             if (distanz == "50m")
-                distanz = "50";
+                disziplin = "sprint50";
             else if (distanz == "75m")
-                distanz = "75";
+                disziplin = "sprint75";
             else
-                distanz = "100"
+                disziplin = "sprint100"
             messung = document.getElementById("radioHandmessung").checked == true ? "h" : "e";
-            data = _klassenstufe + ",sprint," + distanz + "," + messung;
+            data = _klassenstufe + "," + disziplin + "," + messung;
         } else if (disziplin == "Laufen") {
             distanz = document.getElementById("modalSelectLaufen").value;
-            if (diszanz == "800m/1000m")
-                distanz = "800/1000";
-            else if (distanz == "1000m")
-                distanz = "1000";
+            if (distanz == "800m/1000m")
+                disziplin = "laufen800/1000";
             else if (distanz == "2000m")
-                distanz = "2000";
+                disziplin = "laufen2000";
             else
-                distanz = "3000";
-            data = _klassenstufe + ",laufen," + distanz;
+                disziplin = "laufen3000";
+            data = _klassenstufe + "," + disziplin;
         } else if (disziplin == "Hochsprung")
             data = _klassenstufe + ",hochsprung";
         else if (disziplin == "Weitsprung")
@@ -191,7 +190,7 @@
             data = _klassenstufe + ",schleuderball";
         else if (disziplin == "Ballwurf") {
             gewicht = document.getElementById("modalSelectBallwurf").value == "200g-Ballwurf" ? "200" : "80";
-            data = _klassenstufe + ",ballwurf," + gewicht;
+            data = _klassenstufe + ",ballwurf" + gewicht;
         }
 
         console.log(data);
@@ -226,7 +225,7 @@
                 erstelleTabelle();
             }
         }
-        xhr.open("GET", "/settings/gradelevel/getdisciplines?id=" + _klassenstufe, true);
+        xhr.open("GET", "/settings/gradelevel/getdisciplines?id=" + _klassenstufe, false);
         xhr.send();
     }
 
@@ -240,27 +239,28 @@
         html = "";
         for (i = 0; i < disziplinen.length; i++) {
             disziplin = disziplinen[i].split(",")[0];
-            if (disziplin == "sprint") {
-                distanz = disziplinen[i].split(",")[1];
-                messung = disziplinen[i].split(",")[2] == "h" ? "Handmessung" : "Elektronische Messung";
-                if (distanz == "50")
+            if (disziplin == "sprint50" || disziplin == "sprint75" || disziplin == "sprint100") {
+                messung = disziplinen[i].split(",")[1] == "h" ? "Handmessung" : "Elektronische Messung";
+                if (disziplin == "sprint50")
                     distanz = "50m";
-                else if (distanz == "75")
+                else if (disziplin == "sprint75")
                     distanz = "75m";
                 else
-                    distanz = "100m"
-                html += "<tr><td>Sprint</td><td>" + distanz + "</td><td>" + messung + "</td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
-            } else if (disziplin == "laufen") {
+                    distanz = "100m";
+                html += "<tr><td>Sprint</td><td>" + distanz + "</td><td>" + messung + "</td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>";
+                disziplin = "sprint";
+            } else if (disziplin == "laufen800/1000" || disziplin == "laufen2000" || disziplin == "laufen3000") {
                 distanz = disziplinen[i].split(",")[1];
-                if (distanz == "800/1000")
+                if (disziplin == "laufen800/1000")
                     distanz = "800m/1000m"
-                else if (distanz == "1000")
+                else if (disziplin == "laufen1000")
                     distanz = "1000m";
-                else if (distanz == "2000")
+                else if (disziplin == "laufen2000")
                     distanz = "2000m";
                 else
                     distanz = "3000m";
                 html += "<tr><td>Laufen</td><td>" + distanz + "</td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+                disziplin = "laufen";
             } else if (disziplin == "hochsprung")
                 html += "<tr><td>Hochsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             else if (disziplin == "weitsprung")
@@ -269,9 +269,11 @@
                 html += "<tr><td>Kugelstoß</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             else if (disziplin == "schleuderball")
                 html += "<tr><td>Schleuderball</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
-            else if (disziplin == "ballwurf") {
-                gewicht = disziplinen[i].split(",")[1] == "200" ? "200g-Ballwurf" : "80g-Schlagballwurf";
-                html += "<tr><td>Ballwurf</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+            else if (disziplin == "ballwurf80" || disziplin == "ballwurf200") {
+                wurf = disziplin == "ballwurf200" ? "Ballwurf" : "Schlagballwurf";
+                gewicht = disziplinen[i] == "ballwurf200" ? "200g" : "80g";
+                html += "<tr><td>" + wurf + "</td><td>" + gewicht + "</td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+                disziplin = "ballwurf";
             }
             index = _disziplinenVerfugbar.indexOf(disziplin);
             if (index != -1) 

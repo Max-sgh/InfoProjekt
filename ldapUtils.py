@@ -24,7 +24,7 @@ class ldapUtils():
             else:
                 return "Other LDAP error: " + e, False
         return conn, True
-    
+
     def getUserDetail(self, username):
         conn, success = self.authenticate(self._adminUsername, self._adminPassword)
         if not success:
@@ -65,5 +65,4 @@ class ldapUtils():
                     result = conn.search_s(self._basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=user)(distinguishedName=" + m.decode("utf-8") + "))")
                     attributes = result[0]
                     members.append(attributes[1]["sAMAccountName"][0].decode("utf-8"))
-
         return members
