@@ -12,14 +12,14 @@ class Werfen (Disziplin):
         self.aW80 = 2.02320	
         self.cW80 = 0.00874
 
-        self.aMKugel = 1.27900
-        self.cMKugel = 0.00398
-        self.aMSchleuder = 1.08500
-        self.cMSchleuder = 0.00921
-        self.aM200 = 1.41490
-        self.cM200 = 0.01039
-        self.aM80 = 2.02320	
-        self.cM80 = 0.00874
+        self.aMKugel = 1.425
+        self.cMKugel = 0.00370
+        self.aMSchleuder = 1.595
+        self.cMSchleuder = 0.009125
+        self.aM200 = 1.936
+        self.cM200 = 0.0124
+        self.aM80 = 2.8	
+        self.cM80 = 0.011
 
 
         self._zuschlag = 0

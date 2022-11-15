@@ -123,22 +123,6 @@
             </tr>
         </thead>
         <tbody id="tbodyStationen">
-            <tr class="clickable" onclick="clickStation(1)">
-                <td>Sprint 1</td>
-                <td>Sprint 50m</td>
-                <td>ReD</td>
-                <td>
-                    <h6><span class="badge text-bg-success">Abgeschlossen</span></h6>
-                </td>
-            </tr>
-            <tr class="clickable" onclick="clickStation(2)">
-                <td>Wurf 1</td>
-                <td>Ballwurf 200g</td>
-                <td>PfR</td>
-                <td>
-                    <h6><span class="badge text-bg-secondary">Offen</span></h6>
-                </td>
-            </tr>
         </tbody>
     </table>
     <div class="d-flex flex-row-reverse">
@@ -184,7 +168,7 @@
         <option value="ballwurf80">80g-Schlagballwurf</option>
     </select>
     <label for="selectLehrer" class="form-label">Lehrer:</label>
-    <select class="form-select" id="selectLehresubmitr">
+    <select class="form-select" id="selectLehrer">
     </select>
 </template>
 
@@ -209,6 +193,7 @@
     } else if (_section == "stations") {
         document.getElementById("content").innerHTML = document.getElementById("stations").innerHTML;
         document.getElementById("heading").innerHTML = "Stationen verwalten";
+        getStations();
     }
 
     function saveSettings() {
@@ -237,6 +222,81 @@
         cnUserGruppe = document.getElementById("usergroupInp").value;
         adPasswort = document.getElementById("serverPassInp").value;
         xhr.send("adUsername=" + adUsername + "&adPassword=" + adPasswort + "&adServer=" + adServer + "&cnAdminGroup=" + cnAdminGruppe + "&cnUserGroup=" + cnUserGruppe);
+
+    }
+
+    function getStations() {
+        /*            
+        <tr class="clickable" onclick="clickStation(2)"><td>Wurf 1</td><td>Ballwurf 200g</td><td>PfR</td><td><h6><span class="badge text-bg-secondary">Offen</span></h6></td></tr>
+        */
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    html = "";
+                    //"Sprint 1;sprint50;ReD;open\nWurf 1;ballwurf200;PfR;closed"
+                    lines = response.split("\n");
+                    for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue;
+                        id = lines[i].split(";")[0];
+                        name = lines[i].split(";")[1];
+                        disziplin = lines[i].split(";")[2];
+                        switch (disziplin) {
+                            case "sprint50":
+                                disziplin = "Sprint 50m";
+                                break;
+                            case "sprint75":
+                                disziplin = "Sprint 75m";
+                                break;
+                            case "sprint100":
+                                disziplin = "Sprint 100m";
+                                break;
+                            case "laufen800/1000":
+                                disziplin = "Laufen 800m/1000m";
+                                break;
+                            case "laufen2000":
+                                disziplin = "Laufen 2000m";
+                                break;
+                            case "laufen3000":
+                                disziplin = "Laufen 3000m";
+                                break;
+                            case "hochsprung":
+                                disziplin = "Hochsprung";
+                                break;
+                            case "weitsprung":
+                                disziplin = "Weitsprung";
+                                break;
+                            case "kugelstoss":
+                                disziplin = "Kugelstoß";
+                                break;
+                            case "schleuderball":
+                                disziplin = "Schleuderball";
+                                break;
+                            case "ballwurf80":
+                                disziplin = "80g Schlagballwurf";
+                                break;
+                            case "ballwurf200":
+                                disziplin = "200g Ballwurf";
+                                break;
+                            default:
+                                disziplin = "Fehler!";
+                                break;
+                        }
+                        lehrer = lines[i].split(";")[3];
+                        status = lines[i].split(";")[4];
+                        badge = status == "closed" ? '<h6><span class="badge text-bg-success">Abgeschlossen</span></h6>' : '<h6><span class="badge text-bg-secondary">Offen</span></h6>';
+                        html += '<tr class="clickable" onclick="clickStation(' + id + ')"><td>' + name + '</td><td>' + disziplin + '</td><td>' + lehrer + '</td><td>' + badge + '</td></tr>';
+                    }
+                    document.getElementById("tbodyStationen").innerHTML = html;
+                }
+            }
+        }
+        xhr.open("GET", "/settings/getStations", false);
+        xhr.send();
 
     }
 
@@ -302,6 +362,8 @@
         if (mode == "station") {
             _mode = mode;
             lehrerVerfügbar = [];
+            document.getElementById("modal-body").innerHTML = document.getElementById("modalStation").innerHTML;
+            document.getElementById("staticBackdropLabel").innerText = "Station hinzufügen";
             xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4 && xhr.status == 200) {
@@ -317,19 +379,17 @@
                             lehrer = [lines[i].split(";")[0], lines[i].split(";")[1]];
                             lehrerVerfügbar.push(lehrer);
                         }
+                        html = "";
+                        for (i = 0; i < lehrerVerfügbar.length; i++) {
+                            html += '<option value="' + lehrerVerfügbar[i][0] + '">' + lehrerVerfügbar[i][1] + '</option>'
+                        }
+                        document.getElementById("selectLehrer").innerHTML = html;
                     }
                 }
             }
             xhr.open("GET", "/station/getTeacher?id=-1", false);
             xhr.send();
 
-            html = "";
-            for (i = 0; i < lehrerVerfügbar.length; i++) {
-                html += '<option value="' + lehrerVerfügbar[i][0] + '">' + lehrerVerfügbar[i][1] + '</option>'
-            }
-            document.getElementById("modal-body").innerHTML = document.getElementById("modalStation").innerHTML;
-            document.getElementById("selectLehrer").innerHTML = html;
-            document.getElementById("staticBackdropLabel").innerText = "Station hinzufügen";
         } else if (mode == "klasse") {
             _mode = mode;
             document.getElementById("modal-body").innerHTML = document.getElementById("modalKlasse").innerHTML;

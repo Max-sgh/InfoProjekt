@@ -264,7 +264,7 @@
             } else if (disziplin == "hochsprung")
                 html += "<tr><td>Hochsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             else if (disziplin == "weitsprung")
-                html += "<tr><td>Witsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
+                html += "<tr><td>Weitsprung</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             else if (disziplin == "kugelstoss")
                 html += "<tr><td>Kugelstoß</td><td></td><td></td><td style='text-align: right;'><i class='fa-solid fa-trash-can clickable'onclick='removeDiscipline(\"" + disziplin + "\")'></i></td></tr>"
             else if (disziplin == "schleuderball")
@@ -284,6 +284,8 @@
     }
 
     function removeDiscipline(disziplin) {
+        if (!confirm("Sind Sie sicher, dass Sie die Disziplin und alle eingetragenen Werte, welche im Zusammenhang mit der Disziplin stehen, gelöscht werden sollen?"))
+            return
         xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {

@@ -21,8 +21,6 @@
 <script>
     _schueler = [];
     _klasse = "{{className}}";
-    _disziplin = "{{discipline}}"
-    _stationsId = 5
     {% for s in schueler %}
     var vorname = "{{s[1]}}";
     var nachname = "{{s[2]}}";
@@ -40,6 +38,7 @@
     <h1 class="fs-1 fw-normal p-2 flex-grow-1">Klasse {{className}}</h1>
     <button type="button" class="btn btn-close p-4" onclick="btnCloseClick()"></button>
 </div>
+<div id="alertPlaceholder"></div>
 
 <table class="table table-striped table-codensed">
     <thead>
@@ -144,14 +143,14 @@
         durchschnitt = 0.0;
         summe = 0.0;
         for (i = 0; i < _schueler.length; i++) {
-            summe += parseFloat(document.getElementById("inp" + i).value);
+            summe += parseFloat(document.getElementById("inp" + i).value.replace(",", "."));
         }
         durchschnitt = summe / _schueler.length;
         obereGrenze = durchschnitt + (durchschnitt/2);
         untereGrenze = durchschnitt - (durchschnitt/2) < 0 ? 0 : durchschnitt - (durchschnitt/2);
 
         for (i = 0; i < _schueler.length; i++) {
-            if (parseFloat(document.getElementById("inp" + i).value) > obereGrenze || parseFloat(document.getElementById("inp" + i).value) < untereGrenze) {
+            if (parseFloat(document.getElementById("inp" + i).value.replace(",", ".")) > obereGrenze || parseFloat(document.getElementById("inp" + i).value.replace(",", ".")) < untereGrenze) {
                 htmlErrors += '<li class="list-group-item list-group-item-warning">Möglicher falscher Wert bei ' + _schueler[i].vorname + ' ' + _schueler[i].nachname + ' - Wert weicht um mehr als die Hälfte vom Durchschnitt ab. Bitte bestätigen Sie die Richtigkeit.</li>';
                 isError = true;
                 continue;
@@ -160,7 +159,6 @@
         if (!isError && !isCritical) {
             htmlErrors += '<li class="list-group-item list-group-item-success">Keine Fehler gefunden.</li>';
         }
-
         document.getElementById("modalErrorList").innerHTML = htmlErrors;
     }
 
@@ -179,23 +177,24 @@
             if (document.getElementById("inp" + i).value == "") {
                 continue;
             }
-            wert = parseFloat(document.getElementById("inp" + i).value);
+            wert = parseFloat(document.getElementById("inp" + i).value.replace(",", "."));
             schuelerNr = document.getElementById("inp" + i).name;
             xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4 && xhr.status == 200) {
                     response = xhr.responseText;
-                    console.log(response);
                     _anzahlAntworten++;
-                    console.log(response + " " + _anzahlRichtigeWerte + " " + _anzahlAntworten);
-
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                        _anzahlAntworten--;
+                    }
                     if (_anzahlAntworten == _anzahlRichtigeWerte) {
                         document.getElementById("LoadingAnimation").style = "visibility: hidden;";
                         window.location.href = "/";
                     }
                 }
             }
-            xhr.open("GET", "/class/addvalue?id=" + schuelerNr + "&stationsid=" + _stationsId + "&value=" + wert, false);
+            xhr.open("GET", "/class/addvalue?id=" + schuelerNr + "&value=" + wert, false);
             xhr.send();
         }
         if (_anzahlRichtigeWerte == 0) {

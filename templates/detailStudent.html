@@ -14,17 +14,18 @@
 </style>
 <script src="static/schueler.js"></script>
 <script>
-    _schueler = new Schueler("Aico", "Aillary", 123);
-    _schueler.geschlecht = "m";
-    _schueler.klasse = "5a";
+    _schueler = new Schueler("", "", 0);
+    _schueler.geschlecht = "";
+    _schueler.klasse = "";
     _mode = "";
+    _schuelerNr = {{schuelerNr}};
     _werte = [];
 </script>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex">
-    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading">Aico Aillary</h1>
+    <h1 class="fs-1 fw-normal p-2 flex-grow-1" id="heading"></h1>
 </div>
 <div id="alertPlaceholder"></div>
 <div id="content" style="margin-left: 20px;">
@@ -54,7 +55,7 @@
                     <div id="placeholderWerte"></div>
                     <hr>
                     <div id="placeholderPunkteGesamt"></div>
-                    <div class="row">
+                    <!--<div class="row">
                         <div class="col">Platz Klasse 5 männlich: </div>
                         <div class="col">2</div>
                         <div class="col"></div>
@@ -68,7 +69,7 @@
                         <div class="col">Platz Gesamt: </div>
                         <div class="col">53</div>
                         <div class="col"></div>
-                    </div>
+                    </div>-->
                     <div style="display: flex; justify-content: flex-end;">
                         <button class="btn btn-primary" style="margin-right: 2px;" role="button"
                             onclick="btnChangeDataClicked()">Daten ändern</button>
@@ -109,6 +110,27 @@
 
 
 <script>
+    function getStudentDetails() {
+        xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    // Vorname, Name, Klasse, Geschlecht
+                    res = response.split(";")
+                    _schueler = new Schueler(res[0], res[1], _schuelerNr);
+                    _schueler.geschlecht = res[3];
+                    _schueler.klasse = res[2];
+                }
+            }
+        }
+        xhr.open("GET", "/student/getDetails?id=" + _schuelerNr, false);
+        xhr.send();
+    }
+    getStudentDetails();
+
     function btnChangeStudentClicked() {
         document.getElementById("modal-title").innerText = "Schüler bearbeiten";
         $('#staticBackdrop').modal('show');
@@ -125,9 +147,19 @@
 
     function btnDeleteClicked() {
         if (confirm("Sind Sie sicher, dass Sie diesen Schüler und alle eingetragenen Werte löschen möchten?")) {
-            console.log("Ja");
-        } else {
-            console.log("Nein");
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        window.location.href = "/";
+                    }
+                }
+            }
+            xhr.open("GET", "/student/delete?id=" + _schuelerNr, false);
+            xhr.send();
         }
     }
 
@@ -188,6 +220,8 @@
             vorname = document.getElementById("inpFirstname").value;
             nachname = document.getElementById("inpLastname").value;
             geschlecht = document.getElementById("selectGender").selectedIndex == 0 ? "m" : "w";
+            if (vorname == "" || nachname == "")
+                return
             if (vorname != _schueler.vorname || nachname != _schueler.nachname || geschlecht != _schueler.geschlecht) {
                 xhr = new XMLHttpRequest();
                 xhr.onreadystatechange = function () {
@@ -196,6 +230,7 @@
                         if (response == "error") {
                             document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
                         } else {
+                            getStudentDetails();
                             reloadData();
                         }
                         $('#staticBackdrop').modal('hide');
@@ -217,8 +252,11 @@
             for (i = 0; i < _werte.length; i++) {
                 wert = document.getElementById("inp" + _werte[i][0]).value;
                 if (wert != _werte[i][1]) {
+                    if (_wert[i][1] == "none") {
+                        string += "none" + "\t" + _werte[i][0] + "\t" + wert + "\n";
+                    }
                     anzahl++;
-                    string += _werte[i][0] + "\t" + wert + "\n";
+                    string += _werte[i][2] + "\t" + wert + "\n";
                 }
             }
             if (anzahl == 0) {
@@ -251,6 +289,7 @@
         document.getElementById("lblSchuelerNr").innerText = "  Schülernummer: " + _schueler.schuelerNr;
         document.getElementById("lblKlasse").innerText = "  Klasse: " + _schueler.klasse;
         document.getElementById("lblGeschlecht").innerText = "  Geschlecht: " + (_schueler.geschlecht == "m" ? "männlich" : "weiblich");
+        document.getElementById("heading").innerText = _schueler.vorname + " " + _schueler.nachname;
     }
     reloadData();
 
@@ -266,20 +305,14 @@
                     lines = response.split('\n');
                     html = "";
                     punkteGesamt = 0;
-                    for (i = 0; i < lines.length - 1; i++) {
+                    _werte = [];
+                    for (i = 0; i < lines.length; i++) {
                         disziplin = lines[i].split('\t')[0];
                         wert = lines[i].split('\t')[1];
                         punkte = lines[i].split('\t')[2];
+                        id = lines[i].split("\t")[3]
                         punkteGesamt += parseInt(punkte);
-                        console.log(disziplin + ": " + wert + " --> " + punkte);
-                        /*
-                        <div class="row">
-                        <div class="col">Sprint (50m): 2,5s</div>
-                        <div class="col">= 512 Punkte</div>
-                        <div class="col"></div>
-                        </div>
-                        */
-                        _werte.push([disziplin, wert]);
+                        _werte.push([disziplin, wert, id]);
                         einheit = "";
                         if (disziplin == "sprint50") {
                             disziplin = "Sprint (50m)";
@@ -328,6 +361,10 @@
                         else if (disziplin == "ballwurf80") {
                             disziplin = "80g-Schlagballwurf";
                             einheit = "m";
+                        }
+                        if (wert == "none") {
+                            wert = "--";
+                            punkte = "--";
                         }
 
                         html += '<div class="row"> \

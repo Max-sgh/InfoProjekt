@@ -44,8 +44,7 @@
                         <button class="btn btn-primary" style="margin-right: 2px;" role="button"
                             onclick="btnChangeStationClicked()" data-bs-toggle="modal"
                             data-bs-target="#staticBackdrop">Daten ändern</button>
-                        <button class="btn btn-danger" role="button" onclick="btnDeleteClicked()">Station
-                            löschen</button>
+                        <button class="btn btn-danger" role="button" onclick="btnDeleteClicked()">Station löschen</button>
                     </div>
                 </div>
             </div>
@@ -111,6 +110,7 @@
                 if (response == "error") {
                     document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
                 } else {
+                    console.log(response);
                     _name = response.split("\n")[0];
                     _disziplin = response.split("\n")[1];
                     _lehrerKürzel = response.split("\n")[2];
@@ -188,19 +188,21 @@
     }
 
     function btnDeleteClicked() {
-        xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                response = xhr.responseText;
-                if (response == "error") {
-                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
-                } else {
-                    window.location.href = "/settings?section=stations"
+        if (confirm("Sind Sie sicher, dass Sie die Station und alle dort eingetragenen Werte löschen möchten?")) {
+            xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    response = xhr.responseText;
+                    if (response == "error") {
+                        document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                    } else {
+                        window.location.href = "/settings?section=stations"
+                    }
                 }
             }
+            xhr.open("GET", "/station/deleteStation?id=" + _stationID, false);
+            xhr.send();
         }
-        xhr.open("GET", "/station/deleteStation?id=" + _stationID, false);
-        xhr.send();
     }
 
     function btnChangeStationClicked() {
