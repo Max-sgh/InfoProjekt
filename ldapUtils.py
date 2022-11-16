@@ -36,7 +36,8 @@ class ldapUtils():
         attributes = result[0]
         cn = attributes[0]
         nachname = attributes[1]["sn"]
-        vorname = attributes[1]['givenName']
+        print(attributes[1])
+        vorname = attributes[1]['displayName']
         loginName = attributes[1]["sAMAccountName"]
         anzeigeName = attributes[1]["displayName"]
         return [cn, vorname, nachname, loginName, anzeigeName]

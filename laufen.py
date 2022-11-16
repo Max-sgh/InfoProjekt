@@ -21,6 +21,7 @@ class Laufen(Disziplin):
 
     def berechnePunkte(self, wert, geschlecht, distanz) -> int:
         punkte = 0
+        wert = int(wert.split(":")[0])*60 + int(wert.split(":")[1])
         if geschlecht == 'w' and distanz == "800/1000":
             punkte = ((800 / (wert)) - self.aW800) / self.cW800
         if geschlecht == 'm' and distanz == "800/1000":

@@ -250,9 +250,9 @@
             anzahl = 0;
             string = "";
             for (i = 0; i < _werte.length; i++) {
-                wert = document.getElementById("inp" + _werte[i][0]).value;
+                wert = document.getElementById("inp" + _werte[i][0]).value.replace(",", ".");
                 if (wert != _werte[i][1]) {
-                    if (_wert[i][1] == "none") {
+                    if (_werte[i][1] == "none") {
                         string += "none" + "\t" + _werte[i][0] + "\t" + wert + "\n";
                     }
                     anzahl++;
@@ -276,7 +276,7 @@
                         $('#staticBackdrop').modal('hide');
                     }
                 }
-                xhr.open("POST", "/student/changemeasurements", true);
+                xhr.open("POST", "/student/changemeasurements?id=" + _schuelerNr, true);
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.send("id=" + _schueler.schuelerNr + "&string=" + string);
             }
@@ -307,11 +307,14 @@
                     punkteGesamt = 0;
                     _werte = [];
                     for (i = 0; i < lines.length; i++) {
+                        if (lines[i] == "")
+                            continue
                         disziplin = lines[i].split('\t')[0];
                         wert = lines[i].split('\t')[1];
                         punkte = lines[i].split('\t')[2];
                         id = lines[i].split("\t")[3]
-                        punkteGesamt += parseInt(punkte);
+                        if (wert != "none")
+                            punkteGesamt += parseInt(punkte);
                         _werte.push([disziplin, wert, id]);
                         einheit = "";
                         if (disziplin == "sprint50") {
