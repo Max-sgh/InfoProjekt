@@ -12,11 +12,14 @@ class ldapUtils():
         conn = ldap.initialize('ldap://' + self._address)
         conn.protocol_version = 3
         conn.set_option(ldap.OPT_REFERRALS, 0)
+        #ldap.set_option(ldap.OPT_REFERRALS, ldap.OPT_ON)
         try:
             result = conn.simple_bind_s(username, password)
         except ldap.INVALID_CREDENTIALS:
+            print("Invalid credentials")
             return "Invalid credentials", False
         except ldap.SERVER_DOWN:
+            print("Server down")
             return "Server down", False
         except (ldap.LDAPError, e):
             if type(e.message) == dict and e.message.has_key('desc'):
@@ -43,11 +46,14 @@ class ldapUtils():
         if not success:
             return []
         result = conn.search_s(self._basedn, ldap.SCOPE_SUBTREE, "(&(objectClass=user)(sAMAccountName=" + username + "))")
+        print(result)
         attributes = result[0]
         for groups in attributes[1]["memberOf"]:
+            print(groups)
             dns = groups.decode("utf-8").split(",")
-            
+
             for d in dns:
+                print(d)
                 if d == "CN=" + groupname:
                     return True
         return False

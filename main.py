@@ -3,10 +3,14 @@ import ldap
 from flask import Flask, redirect, url_for, render_template, send_from_directory, request, session
 from datetime import date
 import sqlite3
+import re
 
 #'Schuelernummer','Jahrgang','Klasse','Geschlecht', Fahrschüler(unnötig),'Name','Vorname', 'Geburtsdatum'
 
 from sprint import Sprint
+from laufen import Laufen
+from sprung import Sprung
+from wurf import Werfen
 from ldapUtils import ldapUtils
 
 
@@ -17,11 +21,14 @@ app.secret_key = "Göröp"
 #Einstellungen
 _cnAdminGruppe = "Sportfest"
 _cnUserGruppe = "Lehrer"
+#_adBaseDN = "DC=gymsgh,DC=local"
 _adBaseDN = "DC=srv-lange,DC=de"
+#_domainName = "gym-sgh.local"
 _domainName = "srv-lange.de"
+#_adServer = "172.20.0.2"
 _adServer = "192.168.178.54"
-_adAdminUser = "Administrator@srv-lange.de"
-_adPasswort = "Rsu3sc123"
+_adAdminUser = "Administrator@srv-lange.de" #"admin"
+_adPasswort = "Rsu3sc123" #"12345"
 
 
 #ldap = ldapUtils("DC=srv-lange,DC=de", "192.168.178.54", "Administrator@srv-lange.de", "Rsu3sc123")
@@ -54,29 +61,45 @@ def checkAdmin():
     else:
         return False
 
-def berechnePunkte(stationID, wert, schuelerNr):
+def berechnePunkte(stationID, wert, schuelerNr) -> int:
     punkte = 0
     #
     # Disziplin über stationID ermitteln und fehlende Werte ergänzen
     #
-    disziplin = "sprint50"
-    messung = "h"
+    dbCon, dbCur = getDB()
+    results = dbCur.execute("SELECT Disziplin FROM station WHERE stationID=" + str(stationID)).fetchall()
+    if len(results) != 1:
+        print("Error 1")
+        return ""
+    disziplin = results[0][0]
+    results = dbCur.execute("SELECT Geschlecht,Klasse FROM schueler WHERE SchuelerNr='" + str(schuelerNr) + "';").fetchall()
+    if len(results) != 1:
+        print("Error 2")
+        return ""
+    geschlecht = results[0][0]
+    klasse = results[0][1]
+    results = dbCur.execute("SELECT Klassenstufe FROM klasse WHERE Name='" + klasse + "'").fetchall()
+    if len(results) != 1:
+        print("Error 3")
+        return ""
+    klassenstufe = results[0][0]
+    results = dbCur.execute("SELECT Messung FROM disziplin WHERE Klassenstufe=" + str(klassenstufe) + " AND Disziplin='" + disziplin + "';").fetchall()
+    if len(results) != 1:
+        print("Error 4")
+        return ""
+    messung = results[0][0]
+
     if disziplin.startswith('sprint'):
         distanz = int(disziplin.split('sprint')[1])
-    if  disziplin.startswith('laufen'):
-        distanz = int(disziplin.split('laufen')[1])
-    if  disziplin.startswith('ballwurf'):
-        gewicht = int(disziplin.split('ballwurf')[1])
-    #
-    # Geschlecht über Schülernummer bestimmen
-    #
-    geschlecht = 'm'
-
-    if disziplin.startswith('sprint'):
         punkte = Sprint().berechnePunkte(wert, geschlecht, messung, distanz)
-
+    if  disziplin.startswith('laufen'):
+        distanz = str(disziplin.split('laufen')[1])
+        punkte = Laufen().berechnePunkte(wert, geschlecht, distanz)
+    if  disziplin.startswith('ballwurf') or disziplin == "kugelstoss" or disziplin == "schleuderball":
+        punkte = Werfen().berechnePunkte(wert, geschlecht, disziplin)
+    if disziplin == "hochsprung" or disziplin == "weitsprung":
+        punkte = Sprung().berechnePunkte(wert, geschlecht, disziplin)
     return punkte
-
 
 #
 # Routen 
@@ -91,9 +114,30 @@ def home():
         return redirect(url_for("login"))
     station = session["station"]
     stationID = session["stationID"]
-    #station = "none"
     # Alle Klassen, die der Station mit gegebener ID zugeteilt wurden, aus DB holen und in Array einfügen
-    klassen = [["10a", 22, "true"], ["8a", 32, "false"], ["5d", 15, "false"]]
+    klassen = []
+    dbCon, dbCur = getDB()
+    results = dbCur.execute("SELECT Name FROM station WHERE StationID='" + str(stationID) + "';").fetchall()
+    if len(results) == 0:
+        return render_template("home.html", station=station, classes = [])
+    name = results[0][0]
+    zuweisungen = dbCur.execute("SELECT Klasse, Status FROM zuweisungStation WHERE StationID=" + str(stationID)).fetchall()
+    if len(zuweisungen) == 0:
+        return render_template("home.html", station=station, classes = [])
+    for zuweisung in zuweisungen:
+        status = zuweisung[1] 
+        if status == "open":
+            status = "false"
+        else:
+            status = "true"
+        klasse = zuweisung[0]
+        schueler = dbCur.execute("SELECT SchuelerNr FROM schueler WHERE Klasse='" + klasse + "';").fetchall()
+        anzahl = len(schueler)
+        if anzahl == 0:
+            status = "true"
+        klassen.append([klasse, anzahl, status])
+
+
     return render_template("home.html", station=station, classes = klassen)
 
 @app.route("/login", methods=["POST", "GET"])
@@ -104,6 +148,7 @@ def login():
     if request.method == "POST":
         user = request.form["username"]
         password = request.form["password"]
+        print(user + " " + password)
         #
         # Anmeldung durchführen
         # Links LDAP:
@@ -132,13 +177,20 @@ def login():
                     session["admin"] = True
                 else:
                     session["admin"] = False
-            else: 
+            else:
                 return render_template("login.html", error=True)
 
         #Station von DB holen - bei keiner Zuteilung station="none"
-        session["station"] = "Sprint 1"
-        session["stationID"] = "sprint1" # ???
-
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT Name,StationID FROM station WHERE lehrer='" + str(user) + "';").fetchall()
+        if len(results) > 1:
+            return "Error"
+        if len(results) == 0:
+            session["station"] = "none"
+            session["stationID"] = "none"
+        else:
+            session["station"] = results[0][0]
+            session["stationID"] = results[0][1]
         return redirect(url_for("home"))
     else:
         if checkLogin():
@@ -158,8 +210,17 @@ def detailClass():
     else: 
         id = request.args.get('id')
         print(id)
-        schueler = [["123456", "DomDom", "Georg"], ["234567", "sdfgh", "sedfgh"], ["123", "Göröp", "WOW"]]
-        return render_template("detailClass.html", className="10a", schueler=schueler, discipline="sprint")
+        schueler = []
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT SchuelerNr, Vorname, Name FROM schueler WHERE Klasse='" + str(id) + "';").fetchall()
+        if len(results) == 0:
+            render_template("detailClass.html", className=id, schueler=[])
+        for res in results:
+            schuelerNr = res[0]
+            vorname = res[1]
+            nachname = res[2]
+            schueler.append([schuelerNr, vorname, nachname])
+        return render_template("detailClass.html", className=id, schueler=schueler)
 
 @app.route('/student')
 def detailStudent():
@@ -173,7 +234,7 @@ def detailStudent():
         return redirect(url_for("home"))
     else: 
         schuelerNr = request.args.get('id')
-        return render_template("detailStudent.html")
+        return render_template("detailStudent.html", schuelerNr = schuelerNr)
 
 @app.route('/evaluation')
 def evaluation():
@@ -185,13 +246,32 @@ def evaluation():
 
     # Alle Schüler aus DB holen und Werte in Array einfügen
     schueler = []
-    schueler.append(["Aico", "Ailary", 1, "m", 100, "5a"])
+    """schueler.append(["Aico", "Ailary", 1, "m", 100, "5a"])
     schueler.append(["Bico", "Bilary", 2, "w", 20, "5c"])
     schueler.append(["Cico", "Bilary", 3, "w", -10, "5a"])
     schueler.append(["Fico", "Nilary", 4, "m", 50, "5d"])
     schueler.append(["Hico", "Hilary", 5, "Seeadler", 5678, "0b"])
     schueler.append(["Zico", "Zilary", 6, "Seeadler", 101, "5a"])
-    schueler.append(["Zaco", "Zalary", 7, "Seeadler", 5324, "5a"])
+    schueler.append(["Zaco", "Zalary", 7, "Seeadler", 5324, "5a"])"""
+    dbCon, dbCur = getDB()
+    results = dbCur.execute("SELECT SchuelerNr, Vorname, Name, Geschlecht, Klasse FROM schueler").fetchall()
+    if len(results) == 0:
+        render_template("evaluation.html", schueler=schueler)
+    for res in results:
+        schuerlerNr = res[0]
+        vorname = res[1]
+        nachname = res[2]
+        geschlecht = res[3]
+        klasse = res[4]
+        punkte = 0
+        werte = dbCur.execute("SELECT StationID, Wert FROM wert WHERE SchuelerNr=" + str(schuerlerNr)).fetchall()
+        if len(werte) == 0:
+            punkte = 0
+        else:
+            for w in werte:
+                punkte += berechnePunkte(w[0], float(w[1]), schuerlerNr)
+        schueler.append([vorname, nachname, schuerlerNr, geschlecht, punkte, klasse])
+
 
     return render_template("evaluation.html", schueler=schueler)
 
@@ -265,12 +345,6 @@ def getUser():
         klasse = request.args.get('klasse')
         print("Get User of class " + str(klasse))
         students = ""
-        #if klasse == "none":
-            # Schüler ohne Klasse zurückgeben
-            #students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}, {"schuelerNr":"6" , "firstname":"Eico" , "lastname":"Eillary" , "geschlecht":"u"}]}'
-        #else:
-            # Schüler einer bestimmte Klasse zurückgeben
-            #students = '{"students": [{"schuelerNr":"1" , "firstname":"Aico" , "lastname":"Aillary" , "geschlecht":"u"}, {"schuelerNr":"5" , "firstname":"Dico" , "lastname":"Dillary" , "geschlecht":"m"}]}'
         dbCon, dbCur = getDB()
         results = dbCur.execute("SELECT SchuelerNr, Vorname, Name, Geschlecht FROM schueler WHERE klasse='" + klasse + "';").fetchall()
         if len(results) == 0:
@@ -343,13 +417,12 @@ def getdiscipline():
         klassenstufe = request.args.get('id')
         data = ""
         dbCon, dbCur = getDB()
-        results = dbCur.execute("SELECT DisziplinID,Disziplin,Messung FROM disziplin WHERE Klassenstufe=" + klassenstufe).fetchall()
+        results = dbCur.execute("SELECT Disziplin,Messung FROM disziplin WHERE Klassenstufe=" + klassenstufe).fetchall()
         if len(results) == 0:
             return ""
         for r in results:
-            id = r[0]
-            disziplin = r[1]
-            messung = r[2]
+            disziplin = r[0]
+            messung = r[1]
             data += disziplin + "," + messung + ";"
         data = data[:-1]
         #data = "sprint50,h;laufen800/1000;kugelstoss;schleuderball;ballwurf200"
@@ -369,6 +442,19 @@ def removediscipline():
         gradelevel = request.args.get('gradelevel')
         discipline = request.args.get('discipline')
         print("Remove discipline '" + str(discipline) + "' from gradelevel #" + str(gradelevel))
+        try:
+            dbCon, dbCur = getDB()
+            results = dbCur.execute("SELECT DisziplinID FROM disziplin WHERE Klassenstufe=" + gradelevel + " AND Disziplin='" + discipline + "';").fetchall()
+            if len(results) == 0:
+                return "error"
+            disziplinID = results[0][0]
+            print(disziplinID)
+            dbCur.execute("DELETE FROM disziplin WHERE Disziplin='" + discipline + "' AND Klassenstufe=" + str(gradelevel))
+            dbCur.execute("DELETE FROM wert WHERE DisziplinID=" + str(disziplinID))
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/settings/gradelevel/adddiscipline')
@@ -387,18 +473,18 @@ def adddiscipline():
         print("Add '" + data[1] + "' to Grade Level #" + data[0])
         gradelevel = data[0]
         discipline = data[1]
+        messung = "None"
         if discipline == "sprint50" or discipline == "sprint75" or discipline == "sprint100":
             #distanz = data[2]
             messung = data[2]
-            print("Sprint - " + discipline +  " m " + messung)
-        elif discipline == "laufen800/1000" or discipline == "laufen2000" or discipline == "laufen3000":
-            #distanz = data[2]
-            print("Laufen - " + discipline)
-        elif discipline == "ballwurf80" or discipline == "ballwurf200":
-            #gewicht = data[2]
-            print("Ballwurf - " + discipline)
-        else:
-            print("Andere Disziplin - " + discipline)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("INSERT INTO disziplin (Disziplin, Klassenstufe, Messung) VALUES ('" + discipline + "'," + gradelevel + ",'" + messung + "')")
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
+
         return "success"
 
 @app.route('/settings/gradelevel/deleteClass')
@@ -484,13 +570,28 @@ def addValue():
     if not checkLogin():
         return "error"
 
-    if request.args.get('id') == None or request.args.get('stationsid') == None or request.args.get('value') == None:
+    if request.args.get('id') == None or request.args.get('value') == None:
         return "error"
     else:
         schuelerNr = request.args.get('id')
-        stationsId = request.args.get('stationsid')
+        stationsId = session["stationID"]
         value = request.args.get('value')
         print(str(schuelerNr) + " an Station " + str(stationsId) + "; Wert: " + str(value))
+        try:
+            dbCon, dbCur = getDB()
+            results = dbCur.execute("SELECT Klasse FROM schueler WHERE SchuelerNr=" + str(schuelerNr)).fetchall()
+            if len(results) != 1:
+                return "error"
+            klasse = results[0][0]
+            dbCur.execute("INSERT INTO wert (StationID, SchuelerNr, Wert) VALUES(" + str(stationsId) + "," + str(schuelerNr) + ",'" + str(value) + "')")
+            print(stationsId)
+            dbCur.execute("UPDATE zuweisungStation SET Status='closed' WHERE StationID=" + str(stationsId) + " AND Klasse='" + klasse + "'")
+            dbCon.commit()
+            dbCon.close()
+        except:
+            print("Error")
+            return "error"
+
         return "success - " + str(schuelerNr)
 
 @app.route('/student/changeData', methods=["POST"])
@@ -502,8 +603,31 @@ def changeStudentData():
         firstname = request.form["firstname"]
         lastname = request.form["lastname"]
         schuelerNr = request.form["id"]
-        print(firstname + " " + lastname + " " + schuelerNr)
+        gender = request.form["gender"]
+        print(firstname + " " + lastname + " " + schuelerNr + " " + gender)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("UPDATE schueler SET Vorname='" + firstname + "', name='" + lastname + "', Geschlecht='" + gender + "' WHERE SchuelerNr=" + str(schuelerNr))
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
+
+@app.route('/student/getDetails')
+def get_student_details():
+    if not checkAdmin():
+        return "error"
+
+    if request.args.get('id') == None:
+        return "error"
+    else:
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT Vorname, Name, Klasse, Geschlecht FROM schueler WHERE SchuelerNr=" + request.args.get('id')).fetchall()
+        if len(results) != 1:
+            return ""
+        schueler = results[0]
+        return schueler[0] + ";" + schueler[1] + ";" + schueler[2] + ";" + schueler[3]
 
 @app.route('/student/getmeasurements')
 def getMeasurements():
@@ -519,7 +643,32 @@ def getMeasurements():
         #
         # Daten im TSV Format - letzter Buchstabe muss \n sein.
         #
-        ret = "sprint50\t12,5\t512\nlaufen800/1000\t5,25\t300\nkugelstoss\t6,5\t520\n"
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT Klasse FROM schueler WHERE SchuelerNr=" + str(request.args.get('id'))).fetchall()
+        if len(results) != 1:
+            return "error"
+        klasse = results[0][0]
+        results = dbCur.execute("SELECT Klassenstufe FROM klasse WHERE Name='" + klasse + "';").fetchall()
+        if len(results) != 1:
+            return "error"
+        klassenstufe = results[0][0]
+        results = dbCur.execute("SELECT Disziplin FROM disziplin WHERE Klassenstufe=" + str(klassenstufe)).fetchall()
+        if len(results) == 0:
+            return ""
+        disziplinen = []
+        for res in results:
+            disziplinen.append(res[0])
+        ret = ""
+        results = dbCur.execute("SELECT StationID, Wert, ID FROM wert WHERE schuelerNr=" + str(request.args.get('id'))).fetchall()
+        for res in results:
+            disziplin = dbCur.execute("SELECT Disziplin FROM station WHERE StationID=" + str(res[0])).fetchall()[0][0]
+            if disziplin in disziplinen:
+                disziplinen.remove(disziplin)
+            ret += disziplin + "\t" + str(res[1]) + "\t" + str(berechnePunkte(res[0], float(res[1]), request.args.get('id'))) + "\t" + str(res[2]) + "\n"
+        for d in disziplinen:
+            ret += d + "\tnone"
+
+        #ret = "sprint50\t12,5\t512\nlaufen800/1000\t5,25\t300\nkugelstoss\t6,5\t520\n"
         return ret
 
 @app.route('/student/changemeasurements', methods=["POST"])
@@ -533,13 +682,27 @@ def changemeasurements():
         disciplines = string.split("\n")
         disciplines.pop()
         for d in disciplines:
-            print (d)
-            discipline = d.split('\t')[0]
+            ID = d.split('\t')[0]
             value = d.split('\t')[1]
             #
             # Disziplin und Wert in DB ändern
             # Neue Punktzahl berechnen
             #
+            if ID == "none":
+                # 
+                # Neuen Wert anlegen
+                # 
+                continue
+
+            try:
+                dbCon, dbCur = getDB()
+                dbCur.execute("UPDATE wert SET Wert='" + value + "' WHERE ID=" + str(ID))
+                dbCon.commit()
+                dbCon.close()
+            except:
+                print("Error")
+                return "error"
+
         return "success"
 
 @app.route('/student/delete')
@@ -554,7 +717,43 @@ def deleteStudent():
         # Schüler in Tabelle Schüler löschen 
         # Alle Werte von Schüler löschen
         #
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("DELETE FROM wert WHERE SchuelerNr=" + str(request.args.get('id')))
+            dbCur.execute("DELETE FROM schueler WHERE SchuelerNr=" + str(request.args.get('id')))
+            dbCon.commit()
+            dbCon.close()
+        except:
+            print("Error")
+            return "error"
         return "success"
+
+@app.route('/settings/getStations')
+def get_stations():
+    if not checkAdmin():
+        return "error"
+    dbCon, dbCur = getDB()
+    ret = ""
+    results = dbCur.execute("SELECT StationID, Lehrer, Disziplin, Name From station;").fetchall()
+    if len(results) == 0:
+        return ""
+    for r in results:
+        id = r[0]
+        lehrer = r[1]
+        disziplin = r[2]
+        name = r[3]
+        status = "closed"
+        res = dbCur.execute("SELECT Status FROM zuweisungStation WHERE StationID=" + str(id)).fetchall()
+        if len(res) == 0:
+            status = "open"
+        else:
+            for s in res:
+                if s[0] == "open":
+                    status = "open"
+                    break
+        ret += str(id) + ";" + name + ";" + disziplin + ";" + lehrer + ";" + status + "\n"
+    print(ret)
+    return ret
 
 @app.route('/station/getClasses')
 def get_classes():
@@ -564,13 +763,42 @@ def get_classes():
     if request.args.get('id') == None:
         return "error"
     else:
+        stationID = request.args.get('id')
         if request.args.get('discipline') == None:
             # Alle Klassen der Station
-            return "10a;closed\n5b;open\n"
+            dbCon, dbCur = getDB()
+            results = dbCur.execute("SELECT Klasse,Status FROM zuweisungStation WHERE StationID=" + stationID).fetchall()
+            if len(results) == 0:
+                return ""
+            ret = ""
+            for r in results:
+                ret += r[0] + ";" + r[1] + "\n"
+            return ret
         else:
             # Alle Klassen mit Disziplin = discipline, die NICHT in Station sind
-            dicipline = request.args.get('discipline')
-            return "5b\n8a\n12c\n25a\n"
+            discipline = request.args.get('discipline')
+            dbCon, dbCur = getDB()
+            results = dbCur.execute("SELECT Klassenstufe FROM disziplin WHERE Disziplin='" + discipline + "'").fetchall()
+            if len(results) == 0:
+                return ""
+            stationen = []
+            res = dbCur.execute("SELECT StationID FROM station WHERE Disziplin='" + discipline + "';").fetchall()
+            if len(res) == 0:
+                return "error"
+            for s in res:
+                stationen.append(int(s[0]))
+            # if Station in [] --> continue else add String
+            ret = ""
+            for result in results:
+                klassen = dbCur.execute("SELECT Name FROM klasse WHERE Klassenstufe=" + str(result[0])).fetchall()
+                if len(klassen) == 0:
+                    continue
+                for k in klassen:
+                    for s in stationen:
+                        if len(dbCur.execute("SELECT status FROM zuweisungStation WHERE StationID=" + str(s) + " AND klasse='" + k[0] + "'").fetchall()) != 0:
+                            continue
+                        ret += k[0] + "\n"
+            return ret
 
 @app.route('/station/getDetails')
 def get_details():
@@ -580,7 +808,22 @@ def get_details():
     if request.args.get('id') == None:
         return "error"
     else:
-        return "Wurf 1\nballwurf200\nReD\nChristin Redlich"
+        stationID = request.args.get('id')
+        dbCon, dbCur = getDB()
+        results = dbCur.execute("SELECT Name,Lehrer,Disziplin FROM station WHERE StationID=" + stationID).fetchall()
+        if len(results) != 1:
+            return "error"
+        result = results[0]
+        disziplin = result[2]
+        name = result[0]
+        lehrerkürzel = result[1]
+        # cn, vorname, nachname, loginName, anzeigeName
+        user = _ldapU.getUserDetail(lehrerkürzel)
+        vorname = user[1][0].decode("utf-8")
+        nachname = user[2][0].decode('utf-8')
+        ret = "" + name + "\n" + disziplin + "\n" + lehrerkürzel + "\n" + vorname + " " + nachname
+        dbCon.close()
+        return ret
 
 @app.route('/station/getTeacher')
 def add_class():
@@ -593,7 +836,30 @@ def add_class():
         #
         # Alle Lehrer ohne Station und Lehrer der Station zurück geben
         #
-        return "WaG;Torsten Wagner\nBeM;Chris Bergmann\nReD;Christin Redlich\n"
+        stationID = request.args.get('id')
+        dbCon, dbCur = getDB()
+        if stationID != "-1":
+            results = dbCur.execute("SELECT Lehrer FROM station WHERE StationID=" + request.args.get('id')).fetchall()
+            if len(results) != 1:
+                return "error"
+            lehrerStation = results[0][0]
+        alleLehrer = _ldapU.getAllGroupMembers(_cnUserGruppe)
+        print(alleLehrer)
+        results = dbCur.execute("SELECT Lehrer FROM station").fetchall()
+        ret = ""
+        for r in results:
+            if r[0] in alleLehrer:
+                alleLehrer.remove(r[0])
+        if stationID != "-1":
+            alleLehrer.append(lehrerStation)
+        for lehrer in alleLehrer:
+            # cn, vorname, nachname, loginName, anzeigeName
+            user = _ldapU.getUserDetail(lehrer)
+            vorname = user[1][0].decode("utf-8")
+            nachname = user[2][0].decode("utf-8")
+            ret += lehrer + ";" + vorname + " " + nachname + "\n"
+        dbCon.close()
+        return ret
 
 @app.route('/station/changeData', methods=["POST"])
 def change_data():
@@ -603,6 +869,13 @@ def change_data():
         lehrer = request.form["lehrer"]
         name = request.form["name"]
         stationID = request.form["id"]
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("UPDATE station SET lehrer='" + lehrer + "', Name='" + name + "' WHERE StationID=" + stationID)
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/station/addClass', methods=["POST"])
@@ -612,7 +885,13 @@ def add_class_station():
     if request.method == "POST":
         klasse = request.form["class"]
         stationID = request.form["id"]
-        print(stationID + " -> " + klasse)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("INSERT INTO zuweisungStation (StationID, Klasse) VALUES (" + stationID + ",'" + klasse + "')")
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/station/deleteClass')
@@ -624,7 +903,13 @@ def delete_class_station():
     else:
         stationID = request.args.get('id')
         klasse = request.args.get('class')
-        print("Delete: " + stationID + " -> " + klasse)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("DELETE FROM zuweisungStation WHERE StationID=" + stationID + " AND Klasse='" + klasse + "'")
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/station/deleteStation')
@@ -635,6 +920,16 @@ def delete_station():
     if request.args.get('id') == None:
         return "error"
     else:
+        stationID = request.args.get('id')
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("DELETE FROM zuweisungStation WHERE StationID=" + stationID)
+            dbCur.execute("DELETE FROM wert WHERE StationID=" + stationID)
+            dbCur.execute("DELETE FROM station WHERE StationID=" + stationID)
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/station/addStation', methods=["POST"])
@@ -646,6 +941,13 @@ def add_station():
         discipline = request.form["discipline"]
         teacher = request.form["teacher"]
         print("Neue Station: " + name + " - " + discipline + " -> " + teacher)
+        try:
+            dbCon, dbCur = getDB()
+            dbCur.execute("INSERT INTO station (Lehrer, Disziplin, Name) VALUES ('" + teacher + "','" + discipline + "','" + name + "');")
+            dbCon.commit()
+            dbCon.close()
+        except:
+            return "error"
         return "success"
 
 @app.route('/logout')
@@ -676,7 +978,23 @@ def upload_students():
         if file:
             csv = file.read().decode('utf-8')
             print(csv)
-        else: 
+            #'Schuelernummer','Jahrgang','Klasse','Geschlecht', Fahrschüler(unnötig),'Name','Vorname', 'Geburtsdatum'
+            students = csv.split("\n")
+            dbCon, dbCur = getDB()
+            for s in students:
+                if s == "":
+                    continue
+                infos = s.split(";")
+                if len(dbCur.execute("SELECT Klasse FROM schueler WHERE SchuelerNr=" + infos[0]).fetchall()) != 0:
+                    continue
+                if len(dbCur.execute("SELECT Klassenstufe FROM Klasse WHERE Name='" + infos[2] + "'").fetchall()) == 0:
+                    klassenstufe = re.findall("\d+", infos[2])[0]
+                    dbCur.execute('INSERT INTO klasse (Name,Klassenstufe) VALUES ("' + infos[2] + '",' + klassenstufe + ');')
+                    dbCon.commit()
+                dbCur.execute("INSERT INTO schueler (SchuelerNr,Jahrgang, Klasse, Geschlecht,Name,Vorname,Geburtsdatum) VALUES(" + infos[0] + "," + infos[1] + ",'" + infos[2] + "','" + infos[3] + "','" + infos[5] + "','" + infos[6] + "','" + infos[7] + "');")
+                dbCon.commit()
+            dbCon.close()
+        else:
             return "error"
         return "success"
 
@@ -711,9 +1029,8 @@ def change_general_settings():
         if domain == "":
             return "error;Username does not include Domain name"
         dn = domain.split(".")
-        for d in dn:
-            basedn += "DC=" + d + ","
-        basedn = basedn[:-1]
+        for d in dn:                    anzahl++;
+
         print(basedn)
         try:
             conn = ldap.initialize('ldap://' + adServer)
