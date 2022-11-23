@@ -2,8 +2,8 @@ import sys
 import ldap
 
 
-AD_SERVERS = ['172.20.0.2']
-AD_USER_BASEDN = "DC=gymsgh,DC=local"
+AD_SERVERS = ['srv-lange.de']
+AD_USER_BASEDN = "DC=srv-lange,DC=de"
 AD_USER_FILTER = '(&(objectClass=USER)(sAMAccountName={username}))'
 AD_USER_FILTER2 = '(&(objectClass=USER)(dn={userdn}))'
 AD_GROUP_FILTER = '(&(objectClass=GROUP)(cn={group_name}))'
@@ -86,7 +86,7 @@ def get_group_members(group_name, ad_conn, basedn=AD_USER_BASEDN):
 
 if __name__ == "__main__":
   group_name = sys.argv[1]
-  ad_conn, result = ad_auth("WAG@gymsgh.local", "matphyinf")
+  ad_conn, result = ad_auth("lehrer2@srv-lange.de", "Projekt22&")
   print(ad_conn)
   get_group_members("Sportfest", ad_conn)
   #if result:

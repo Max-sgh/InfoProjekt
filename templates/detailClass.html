@@ -143,6 +143,8 @@
         durchschnitt = 0.0;
         summe = 0.0;
         for (i = 0; i < _schueler.length; i++) {
+            if (document.getElementById("inp" + i).value == "" || !checkInput(document.getElementById("inp" + i), i))
+                continue;
             summe += parseFloat(document.getElementById("inp" + i).value.replace(",", "."));
         }
         durchschnitt = summe / _schueler.length;

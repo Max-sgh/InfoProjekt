@@ -22,6 +22,7 @@ class ldapUtils():
             print("Server down")
             return "Server down", False
         except (ldap.LDAPError, e):
+            print("Other LDAP error")
             if type(e.message) == dict and e.message.has_key('desc'):
                 return "Other LDAP error: " + e.message['desc'], False
             else:
@@ -36,7 +37,6 @@ class ldapUtils():
         attributes = result[0]
         cn = attributes[0]
         nachname = attributes[1]["sn"]
-        print(attributes[1])
         vorname = attributes[1]['displayName']
         loginName = attributes[1]["sAMAccountName"]
         anzeigeName = attributes[1]["displayName"]
@@ -54,7 +54,6 @@ class ldapUtils():
             dns = groups.decode("utf-8").split(",")
 
             for d in dns:
-                print(d)
                 if d == "CN=" + groupname:
                     return True
         return False
