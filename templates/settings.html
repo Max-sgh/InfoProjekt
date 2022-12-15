@@ -38,7 +38,7 @@
 </template>
 <template id="general">
     <div class="w-50">
-        <h3 style="text-decoration: underline;">LDAP Einstellungen:</h3>
+        <h3 style="text-decoration: underline;">LDAP Einstellungen</h3>
         <form>
             <div class="mb-3">
                 <label for="serverAddressInp" class="form-label">LDAP Server:</label>
@@ -64,6 +64,14 @@
 
             <button type="button" class="btn btn-primary btn-lg float-end" onclick="saveSettings()">Speichern</button>
         </form>
+        <br>
+        <br>
+        <h3 style="text-decoration: underline;">Werte exportieren</h3>
+        <form id="formExport">
+            <select id="selectExport" class="form-select"></select>
+        </form>
+        <br>
+        <button type="button" class="btn btn-primary btn-lg float-end" onclick="exportData()">Werte als PDF exportieren</button>
         <br>
         <br>
         <h3 style="text-decoration: underline;">Nutzer Upload</h3>
@@ -176,7 +184,6 @@
     <label for="inpNameKlasse" class="form-label">Klassenname:</label>
     <input type="text" class="form-control" id="inpNameKlasse" value="">
 </template>
-
 <script>
     var _section = "{{ section }}";
     if (_section == "None") {
@@ -194,6 +201,58 @@
         document.getElementById("content").innerHTML = document.getElementById("stations").innerHTML;
         document.getElementById("heading").innerHTML = "Stationen verwalten";
         getStations();
+    }
+
+    function exportData() {
+        xhr = new XMLHttpRequest();
+        /*xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                response = xhr.responseText;
+                if (response == "error") {
+                    document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+                } else {
+                    //_adAdminUser + ";" + _adServer + ";" + _cnAdminGruppe + ";" + _cnUserGruppe + ";" + _adBaseDN
+                    //console.log(response);
+                    console.log("Test");
+                    var a = document.createElement('a');
+                    var url = window.URL.createObjectURL(xhr);
+                    a.href = url;
+                    a.download = "Export.pdf";
+                    document.body.append(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                }
+            }
+        }*/
+        /*xhr.onload = function(e) {
+            var blob = e.currentTarget.response;
+            //var contentDispo = e.currentTarget.getResponseHeader('Content-Disposition');
+            saveOrOpenBlob(blob, "export.pdf");
+        }
+        xhr.open("GET", "/settings/exportdata?class=" + document.getElementById("selectExport").value, false);
+        xhr.responseType = "blob";
+        xhr.send();*/
+        xhr.open("POST", "/settings/exportdata?class=" + document.getElementById("selectExport").value);
+        xhr.responseType = "blob";
+        formdata = new FormData(document.getElementById("formExport"));
+        xhr.send(formdata);
+
+        xhr.onload = function(e) {
+            if (this.status == 200 && this.response.type == "application/pdf") {
+                var blob = new Blob([this.response], {type: 'image/pdf'});
+                let a = document.createElement("a");
+                a.style = "display: none";
+                document.body.appendChild(a);
+                let url = window.URL.createObjectURL(blob);
+                a.href = url;
+                a.download = 'export.pdf';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }else{
+                document.getElementById("alertPlaceholder").innerHTML = '<div id="alertBox" class="alert alert-danger" role="alert">Interner Server-Fehler - Seite bitte neu laden oder Administrator kontaktieren!</div>';
+            }
+        };
     }
 
     function saveSettings() {
@@ -526,6 +585,7 @@
                         _klassenstufen.push(gradelevel);
                         _klassen.push(classes);
                     }
+                    prepareExport();
                 }
             }
         }
@@ -574,8 +634,25 @@
         }
 
     }
+    function prepareExport() {
+        select = document.getElementById("selectExport");
+        html = "";
+        console.log(1);
+        for (i = 0; i < _klassenstufen.length; i++) {
+            if (_klassenstufen[i] == "None" || _klassen[i].length == 0)
+                continue;
+            html += "<option value='gl" + _klassenstufen[i] + "'>Klassenstufe " + _klassenstufen[i] + "</option>";
+            console.log(_klassenstufen[i]);
+            for (j = 0; j < _klassen[i].length; j++) {
+                html += "<option value='c" + _klassen[i][j][0] + "'>Klasse " + _klassen[i][j][0] + "</option>";
+                console.log(_klassen[i][j]);
+            }
+        }
+        select.innerHTML = html;
+    }
 
     getClasses();
+    
     klassenstufentabelleErstellen();
     klassentabelleErstellen();
 </script>

@@ -1,10 +1,12 @@
 from urllib import request
 import ldap
-from flask import Flask, redirect, url_for, render_template, send_from_directory, request, session
+from flask import Flask, redirect, url_for, render_template, send_from_directory, request, session, send_file
 from datetime import date
 import sqlite3
 import re
+import os
 
+from export import PdfExport
 from server import Server
 
 app = Flask(__name__, static_folder="static")
@@ -553,11 +555,11 @@ def get_student_details():
         return schueler[0] + ";" + schueler[1] + ";" + schueler[2] + ";" + schueler[3]
 
 @app.route('/student/getmeasurements')
-def getMeasurements():
+def getMeasurements(_id = None):
     if not checkAdmin():
         return "error"
 
-    if request.args.get('id') == None:
+    if request.args.get('id') == None and _id == None:
         return "error"
     else:
         #
@@ -566,10 +568,14 @@ def getMeasurements():
         #
         # Daten im TSV Format - letzter Buchstabe muss \n sein.
         #
+        if _id is not None:
+            id = _id
+        else:
+            id = request.args.get('id')
         dbCon, dbCur = _server.getDB()
-        results = dbCur.execute("SELECT Klasse FROM schueler WHERE SchuelerNr=" + str(request.args.get('id'))).fetchall()
+        results = dbCur.execute("SELECT Klasse FROM schueler WHERE SchuelerNr=" + str(id)).fetchall()
         if len(results) != 1:
-            return "error"
+            return "error0"
         klasse = results[0][0]
         if klasse == "None":
             return ""
@@ -584,7 +590,7 @@ def getMeasurements():
         for res in results:
             disziplinen.append(res[0])
         ret = ""
-        results = dbCur.execute("SELECT StationID, Wert, ID FROM wert WHERE schuelerNr=" + str(request.args.get('id'))).fetchall()
+        results = dbCur.execute("SELECT StationID, Wert, ID FROM wert WHERE schuelerNr=" + str(id)).fetchall()
         for res in results:
             disziplin = dbCur.execute("SELECT Disziplin FROM station WHERE StationID=" + str(res[0])).fetchall()[0][0]
             if disziplin in disziplinen:
@@ -592,7 +598,7 @@ def getMeasurements():
             wert = res[1]
             if not disziplin.startswith("laufen"):
                 wert = float(res[1])
-            ret += disziplin + "\t" + str(res[1]) + "\t" + str(_server.berechnePunkte(res[0], wert, request.args.get('id'))) + "\t" + str(res[2]) + "\n"
+            ret += disziplin + "\t" + str(res[1]) + "\t" + str(_server.berechnePunkte(res[0], wert, id)) + "\t" + str(res[2]) + "\n"
         for d in disziplinen:
             ret += d + "\tnone\n"
         return ret
@@ -1043,6 +1049,155 @@ def change_general_settings():
         dbCon.commit()
         dbCon.close()
         return "success;"
+
+@app.route('/settings/exportdata', methods=["POST"])
+def export():
+    if not checkAdmin():
+        return "error"
+    else:
+        if request.args.get('class') == None:
+            return "error"
+        klasse = request.args.get('class')
+        data = []
+        disciplines = []
+        disciplinesPrint = []
+        print(klasse)
+        if klasse.startswith("gl"):
+            klassenstufe = klasse.split("gl")[1]
+            klassen = []
+            dbCon, dbCur = _server.getDB()
+            results = dbCur.execute("SELECT Disziplin FROM disziplin WHERE Klassenstufe=" + klassenstufe + ";").fetchall()
+            if len(results) == 0:
+                return "error"
+            for res in results:
+                disciplines.append(res[0])
+            
+            results = dbCur.execute("SELECT Name FROM klasse WHERE Klassenstufe=" + klassenstufe + ";").fetchall()
+            if len(results) == 0:
+                return "error"
+            for res in results:
+                if not res in klassen:
+                    klassen.append(res[0])
+                klasse = []
+                schueler = dbCur.execute("SELECT SchuelerNr, Name, Vorname FROM schueler WHERE klasse='" + res[0] + "';").fetchall()
+                if len(schueler) == 0:
+                    klassen.remove(res[0])
+                    continue
+                for s in schueler:
+                    schueler = [str(s[0]), s[1], s[2]]
+                    #["15073", "Lange", "Maximilian", "13,5s", "5:38min"]
+                    """ sprint50        2.6     2002    13
+                        hochsprung      none
+                        laufen800/1000  none
+                        weitsprung      none
+                    """
+                    string = getMeasurements(s[0])
+                    disziplinen = string.split("\n")
+                    for d in disciplines:
+                        for dis in disziplinen:
+                            if d == dis.split("\t")[0]:
+                                if dis.split("\t")[1] != "none":
+                                    schueler.append(dis.split("\t")[1])
+                                else:
+                                    schueler.append(" - ")
+                    klasse.append(schueler)
+                data.append(klasse)
+            for d in disciplines:
+                if d == "sprint50":
+                    disciplinesPrint.append("Sprint (50m)")
+                if d == "sprint75":
+                    disciplinesPrint.append("Sprint (75m)")
+                if d == "sprint100":
+                    disciplinesPrint.append("Sprint (100m)")
+                if d == "laufen800/1000":
+                    disciplinesPrint.append("Laufen (800m/1000m)")
+                if d == "sprint2000":
+                    disciplinesPrint.append("Sprint (2000m)")
+                if d == "sprint3000":
+                    disciplinesPrint.append("Sprint (3000m)")
+                if d == "hochsprung":
+                    disciplinesPrint.append("Hochsprung")
+                if d == "weitsprung":
+                    disciplinesPrint.append("Weitsprung")
+                if d == "kugelstoss":
+                    disciplinesPrint.append("Kugelstoß")
+                if d == "schleuderball":
+                    disciplinesPrint.append("Schleuderball")
+                if d == "ballwurf200":
+                    disciplinesPrint.append("200g-Ballwurf")
+                if d == "ballwurf80":
+                    disciplinesPrint.append("80g-Schlagballwurf")
+
+            pdf = PdfExport()
+            export = pdf.exportGradeLevel(data, klassen, disciplinesPrint)
+            export.output("export.pdf")
+        else:
+            klasse = klasse.split("c")[1]
+            dbCon, dbCur = _server.getDB()
+            results = dbCur.execute("SELECT Klassenstufe FROM klasse WHERE Name='" + klasse + "'").fetchall()
+            if len(results) == 0:
+                return "error3"
+            klassenstufe = results[0][0]
+
+            results = dbCur.execute("SELECT Disziplin FROM disziplin WHERE Klassenstufe=" + str(klassenstufe) + ";").fetchall()
+            if len(results) == 0:
+                return "error2"
+            for res in results:
+                disciplines.append(res[0])
+            schueler = dbCur.execute("SELECT SchuelerNr, Name, Vorname FROM schueler WHERE klasse='" + klasse + "';").fetchall()
+            if len(schueler) == 0:
+                return "error4"
+            for s in schueler:
+                schueler = [str(s[0]), s[1], s[2]]
+                #["15073", "Lange", "Maximilian", "13,5s", "5:38min"]
+                """ sprint50        2.6     2002    13
+                    hochsprung      none
+                    laufen800/1000  none
+                    weitsprung      none
+                """
+                string = getMeasurements(s[0])
+                disziplinen = string.split("\n")
+                for d in disciplines:
+                    for dis in disziplinen:
+                        if d == dis.split("\t")[0]:
+                            if dis.split("\t")[1] != "none":
+                                schueler.append(dis.split("\t")[1])
+                            else:
+                                schueler.append(" - ")
+                data.append(schueler)
+            for d in disciplines:
+                if d == "sprint50":
+                    disciplinesPrint.append("Sprint (50m)")
+                if d == "sprint75":
+                    disciplinesPrint.append("Sprint (75m)")
+                if d == "sprint100":
+                    disciplinesPrint.append("Sprint (100m)")
+                if d == "laufen800/1000":
+                    disciplinesPrint.append("Laufen (800m/1000m)")
+                if d == "sprint2000":
+                    disciplinesPrint.append("Sprint (2000m)")
+                if d == "sprint3000":
+                    disciplinesPrint.append("Sprint (3000m)")
+                if d == "hochsprung":
+                    disciplinesPrint.append("Hochsprung")
+                if d == "weitsprung":
+                    disciplinesPrint.append("Weitsprung")
+                if d == "kugelstoss":
+                    disciplinesPrint.append("Kugelstoß")
+                if d == "schleuderball":
+                    disciplinesPrint.append("Schleuderball")
+                if d == "ballwurf200":
+                    disciplinesPrint.append("200g-Ballwurf")
+                if d == "ballwurf80":
+                    disciplinesPrint.append("80g-Schlagballwurf")
+            pdf = PdfExport()
+            export = pdf.exportClass(data, klasse, disciplinesPrint)
+            export.output("export.pdf")
+
+        entry = os.getcwd() + "/export.pdf"
+        ret = send_file(entry, as_attachment=True)
+        os.remove(entry)
+        return ret
 
 @app.route('/settings/deleteAllData')
 def method_name():

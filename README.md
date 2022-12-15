@@ -4,6 +4,7 @@ Zusätzlich benötigte Bibliotheken:
   - pyldap
   - flask
   - sqlite3 (müsste vorinstalliert sein)
+  - fdpf (für Export von Klassen/Klassenstufen)
   
 Hinweise zur Installation von pyldap:
   Aktuell ist eine Installation über pip nicht möglich. Deshalb bitte auf folgenden Link informieren und passende Version über .whl Datei installieren:
