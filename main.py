@@ -1101,7 +1101,13 @@ def export():
                                 else:
                                     schueler.append(" - ")
                     klasse.append(schueler)
-                data.append(klasse)
+                # Schüler nach Nachnamen sortieren
+                kopieKlasse = klasse.copy()
+                for i in range(len(kopieKlasse)):
+                    for j in range(len(kopieKlasse) - i - 1):
+                        if (kopieKlasse[j][1] > kopieKlasse[j+1][1]):
+                            kopieKlasse[j], kopieKlasse[j+1] = kopieKlasse[j+1], kopieKlasse[j]
+                data.append(kopieKlasse)
             for d in disciplines:
                 if d == "sprint50":
                     disciplinesPrint.append("Sprint (50m)")
@@ -1165,6 +1171,13 @@ def export():
                             else:
                                 schueler.append(" - ")
                 data.append(schueler)
+            # Schüler nach Nachnamen sortieren
+            kopieKlasse = data.copy()
+            for i in range(len(kopieKlasse)):
+                for j in range(len(kopieKlasse) - i - 1):
+                    if (kopieKlasse[j][1] > kopieKlasse[j+1][1]):
+                        kopieKlasse[j], kopieKlasse[j+1] = kopieKlasse[j+1], kopieKlasse[j]
+
             for d in disciplines:
                 if d == "sprint50":
                     disciplinesPrint.append("Sprint (50m)")
@@ -1191,7 +1204,7 @@ def export():
                 if d == "ballwurf80":
                     disciplinesPrint.append("80g-Schlagballwurf")
             pdf = PdfExport()
-            export = pdf.exportClass(data, klasse, disciplinesPrint)
+            export = pdf.exportClass(kopieKlasse, klasse, disciplinesPrint)
             export.output("export.pdf")
 
         entry = os.getcwd() + "/export.pdf"
